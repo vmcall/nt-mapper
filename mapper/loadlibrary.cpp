@@ -26,7 +26,7 @@ bool injection::loadlibrary::inject(std::string& buffer)
 	auto function_pointer = reinterpret_cast<uintptr_t>(GetProcAddress(module_handle, "LoadLibraryA"));
 
 	// EXECUTE LOADLIBRARY IN REMOTE PROCESS
-	auto thread_handle = this->process.create_thread(function_pointer, path_pointer);
+	auto thread_handle = safe_handle(this->process.create_thread(function_pointer, path_pointer));
 
 	if (!thread_handle)
 	{
@@ -35,7 +35,7 @@ bool injection::loadlibrary::inject(std::string& buffer)
 	}
 
 	// WAIT FOR THREAD TO FINISH
-	WaitForSingleObject(thread_handle, INFINITE);
+	WaitForSingleObject(thread_handle.get_handle(), INFINITE);
 
 	// FREE LIBRARY PATH FROM PROCESS MEMORY
 	this->process.free_memory(path_pointer);
