@@ -7,8 +7,16 @@ struct map_ctx
 {
 	std::string image_name;
 	portable_executable pe;
-	std::variant<uintptr_t, void*> local_image;
-	std::variant<uintptr_t, void*> remote_image;
+	
+	union {
+		uintptr_t local_image;
+		void* local_image_void;
+
+	};
+	union {
+		uintptr_t remote_image;
+		void* remote_image_void;
+	};
 	
 	uint8_t* get_pe_buffer();
 

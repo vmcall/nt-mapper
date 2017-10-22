@@ -4,7 +4,7 @@
 #include "logger.hpp"
 
 
-bool injection::loadlibrary::inject(const std::string& buffer)
+bool injection::loadlibrary::inject(std::string& buffer)
 {
 	// ALLOCATE LIBRARY PATH TO PROCESS MEMORY
 	auto path_pointer = this->process.raw_allocate(buffer.length());

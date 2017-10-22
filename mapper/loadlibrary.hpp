@@ -8,7 +8,7 @@ namespace injection
 	{
 	public:
 		loadlibrary(process& proc) : process(proc) {}
-		bool inject(const std::string& buffer);
+		bool inject(std::string& buffer);
 
 	protected:
 		process& process;
