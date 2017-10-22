@@ -43,12 +43,12 @@ typedef struct API_SET_NAMESPACE_ARRAY
 
 	inline API_SET_NAMESPACE_ENTRY* entry(SIZE_T index)
 	{
-		return (API_SET_NAMESPACE_ENTRY*)(reinterpret_cast<uintptr_t>(this) + end + index * sizeof(API_SET_NAMESPACE_ENTRY));
+		return reinterpret_cast<API_SET_NAMESPACE_ENTRY*>(reinterpret_cast<uintptr_t>(this) + end + index * sizeof(API_SET_NAMESPACE_ENTRY));
 	}
 
 	inline API_SET_VALUE_ARRAY* get_host(API_SET_NAMESPACE_ENTRY* entry_pointer)
 	{
-		return (API_SET_VALUE_ARRAY*)(reinterpret_cast<uintptr_t>(this) + start + sizeof(API_SET_VALUE_ARRAY) * entry_pointer->size);
+		return reinterpret_cast<API_SET_VALUE_ARRAY*>(reinterpret_cast<uintptr_t>(this) + start + sizeof(API_SET_VALUE_ARRAY) * entry_pointer->size);
 	}
 
 	inline void read_name(API_SET_NAMESPACE_ENTRY* entry_pointer, wchar_t* output)

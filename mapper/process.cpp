@@ -160,18 +160,20 @@ uintptr_t process::get_module_export(uintptr_t module_handle, const char* functi
 		if (export_data->NumberOfFunctions <= 0)
 			logger::log_error("No exports found!");
 
+		auto ptr_function_ordinal = reinterpret_cast<uintptr_t>(function_ordinal);
+
 		for (size_t i = 0; i < export_data->NumberOfFunctions; i++)
 		{
 			WORD ordinal;
 			std::string function_name;
-			auto is_import_by_ordinal = reinterpret_cast<uintptr_t>(function_ordinal) <= 0xFFFF;
+			auto is_import_by_ordinal = ptr_function_ordinal <= 0xFFFF;
 
 			// GET EXPORT INFORMATION
 			ordinal = static_cast<WORD>(is_import_by_ordinal ? i : address_of_ordinals[i]);
 			function_name = reinterpret_cast<char*>(address_of_names[i] + delta);
 
 			// IS IT THE FUNCTION WE ASKED FOR?
-			auto found_via_ordinal = is_import_by_ordinal && (WORD)((uintptr_t)function_ordinal) == (ordinal + export_data->Base);
+			auto found_via_ordinal = is_import_by_ordinal && static_cast<WORD>(ptr_function_ordinal) == (ordinal + export_data->Base);
 			auto found_via_name = !is_import_by_ordinal && function_name == function_ordinal;
 
 			if (found_via_ordinal || found_via_name)

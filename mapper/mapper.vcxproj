@@ -138,9 +138,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="api_set.hpp" />
     <ClInclude Include="binary_file.hpp" />
     <ClInclude Include="loadlibrary.hpp" />

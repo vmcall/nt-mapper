@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <locale>
 #include <codecvt>
+#include <variant>
 
 #include "logger.hpp"
 #include "loadlibrary.hpp"
