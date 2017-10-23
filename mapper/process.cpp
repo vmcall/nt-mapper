@@ -49,8 +49,7 @@ uintptr_t process::raw_allocate(const SIZE_T virtual_size, const uintptr_t addre
 
 bool process::free_memory(const uintptr_t address)
 {
-	auto query = virtual_query(address);
-	return VirtualFreeEx(this->handle.get_handle(), reinterpret_cast<LPVOID>(address), query.RegionSize, MEM_RELEASE);
+	return VirtualFreeEx(this->handle.get_handle(), reinterpret_cast<LPVOID>(address), NULL, MEM_RELEASE);
 }
 
 

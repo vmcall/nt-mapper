@@ -85,9 +85,35 @@ void injection::manualmap::call_entrypoint(map_ctx& ctx)
 	*PPTR(shellcode + 0x1A) = ctx.remote_image + ctx.pe.get_optional_header().AddressOfEntryPoint;
 
 	auto remote_buffer = this->process.raw_allocate(sizeof(shellcode));
-	this->process.write_raw_memory(shellcode, sizeof(shellcode), remote_buffer);
 
-	this->process.create_thread(remote_buffer, NULL);
+	if (!remote_buffer)
+	{
+		logger::log_error("Failed to allocate shellcode");
+		return;
+	}
+
+	do
+	{
+		if (!this->process.write_raw_memory(shellcode, sizeof(shellcode), remote_buffer))
+		{
+			logger::log_error("Failed to write shellcode");
+			break;
+		}
+
+		auto thread_handle = safe_handle(this->process.create_thread(remote_buffer, NULL));
+
+		if (!thread_handle)
+		{
+			logger::log_error("Failed to create shellcode thread");
+			break;
+		}
+
+		WaitForSingleObject(thread_handle.get_handle(), INFINITE);
+	} while (false);
+	
+
+	// FREE SHELLCODE
+	this->process.free_memory(remote_buffer);
 }
 
 void injection::manualmap::relocate_image_by_delta(map_ctx& ctx)

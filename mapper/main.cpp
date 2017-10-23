@@ -11,7 +11,7 @@ int main()
 	auto proc = process(process_id, PROCESS_ALL_ACCESS);
 	auto injector = injection::manualmap(proc);
 
-	auto buffer = binary_file::read_file("D:\\Sync\\TestPEs\\DLLTEST_CONSOLE.dll");
+	auto buffer = binary_file::read_file("D:\\Sync\\TestPEs\\DLLTEST64.dll");
 
 	injector.inject(buffer);
 

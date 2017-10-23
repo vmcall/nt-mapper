@@ -93,7 +93,7 @@ import_list portable_executable::get_imports(uintptr_t image_base)
 
 	for (; import_table->Name; ++import_table)
 	{
-		auto module_name = std::string(reinterpret_cast<char*>(image_base + import_table->Name));
+		auto module_name = std::string(reinterpret_cast<char*>(image_base + (uintptr_t)import_table->Name));
 		std::transform(module_name.begin(), module_name.end(), module_name.begin(), ::tolower);
 
 		auto entry = reinterpret_cast<IMAGE_THUNK_DATA64*>(image_base + import_table->OriginalFirstThunk);
