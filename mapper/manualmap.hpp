@@ -34,13 +34,13 @@ namespace injection
 	{
 	public:
 		manualmap(process& proc) : process(proc) { }
-		bool inject(const std::vector<uint8_t>& buffer);
+		uintptr_t inject(const std::vector<uint8_t>& buffer);
 
 	private:
 		bool map_image(map_ctx& ctx);
 		uintptr_t find_or_map_dependecy(const std::string& image_name);
 		void write_headers(map_ctx& ctx);
-		void call_entrypoint(map_ctx& ctx);
+		bool call_entrypoint(map_ctx& ctx);
 		void write_image_sections(map_ctx& ctx);
 		void relocate_image_by_delta(map_ctx& ctx);
 		void fix_import_table(map_ctx& ctx);

@@ -10,12 +10,10 @@ portable_executable::portable_executable(std::vector<uint8_t>& new_buffer) : buf
 		this->nt_headers = reinterpret_cast<IMAGE_NT_HEADERS64*>(this->buffer.data() + this->dos_header->e_lfanew);
 		this->file_header = this->nt_headers->FileHeader;
 		this->optional_header = this->nt_headers->OptionalHeader;
-	}
-}
 
-void portable_executable::parse()
-{
-	parse_sections();
+		// PARSE IMAGE SECTIONS FOR LATER USAGE
+		parse_sections();
+	}
 }
 
 IMAGE_DOS_HEADER* portable_executable::get_dos_header()

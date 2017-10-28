@@ -2,24 +2,23 @@
 #include "memory_section.hpp"
 #include "api_set.hpp"
 
-bool injection::manualmap::inject(const std::vector<uint8_t>& buffer)
+uintptr_t injection::manualmap::inject(const std::vector<uint8_t>& buffer)
 {
-	logger::log("manualmap initiated");
-
 	// GET LINKED MODULES FOR LATER USE
 	this->linked_modules = this->process.get_modules();
 
 	// INITIALISE CONTEXT
 	map_ctx ctx("Main Image", buffer);
-	ctx.pe.parse();
 
 	// MAP MAIN IMAGE AND ALL DEPENDENCIES
-	map_image(ctx);
+	if (!map_image(ctx))
+		return 0;
 
 	// CALL DEPENCY ENTRYPOINTS AND MAIN IMAGE ENTRYPOINTS
-	call_entrypoint(ctx);
+	if (!call_entrypoint(ctx))
+		return 0;
 
-	return false;
+	return ctx.remote_image;
 }
 
 bool injection::manualmap::map_image(map_ctx& ctx)
@@ -27,11 +26,20 @@ bool injection::manualmap::map_image(map_ctx& ctx)
 	auto section = memory_section(PAGE_EXECUTE_READWRITE, ctx.pe.get_optional_header().SizeOfImage);
 
 	if (!section)
-		return false; // FAILED TO CREATE SECTION - SHOULDN'T HAPPEN
+	{
+		logger::log_error("Failed to create section");
+		return false;
+	}
 
 	// MAP SECTION INTO BOTH LOCAL AND REMOTE PROCESS
 	ctx.local_image = process::current_process().map(section);
 	ctx.remote_image = this->process.map(section);
+
+	if (!ctx.local_image || !ctx.remote_image)
+	{
+		logger::log_error("Failed to map section");
+		return false;
+	}
 
 	// ADD MAPPED MODULE TO LIST OF MODULES
 	this->mapped_modules.push_back(ctx);
@@ -58,7 +66,6 @@ uintptr_t injection::manualmap::find_or_map_dependecy(const std::string& image_n
 
 	// TODO: PROPER FILE SEARCHING
 	auto ctx = map_ctx(image_name, binary_file::read_file("C:\\Windows\\System32\\" + image_name));
-	ctx.pe.parse();
 
 	if (map_image(ctx))
 		return ctx.remote_image;
@@ -76,7 +83,7 @@ void injection::manualmap::write_image_sections(map_ctx& ctx)
 		memcpy(reinterpret_cast<void*>(ctx.local_image + section.VirtualAddress), ctx.get_pe_buffer() + section.PointerToRawData, section.SizeOfRawData);
 }
 
-void injection::manualmap::call_entrypoint(map_ctx& ctx)
+bool injection::manualmap::call_entrypoint(map_ctx& ctx)
 {
 	// dllmain_call_x64.asm
 	uint8_t shellcode[] = { 0x48, 0x83, 0xEC, 0x28, 0x48, 0xB9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0xC7, 0xC2, 0x01, 0x00, 0x00, 0x00, 0x4D, 0x31, 0xC0, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x28, 0xC3 };
@@ -89,14 +96,17 @@ void injection::manualmap::call_entrypoint(map_ctx& ctx)
 	if (!remote_buffer)
 	{
 		logger::log_error("Failed to allocate shellcode");
-		return;
+		return false;
 	}
+
+	auto success = true;
 
 	do
 	{
 		if (!this->process.write_raw_memory(shellcode, sizeof(shellcode), remote_buffer))
 		{
 			logger::log_error("Failed to write shellcode");
+			success = false;
 			break;
 		}
 
@@ -105,6 +115,7 @@ void injection::manualmap::call_entrypoint(map_ctx& ctx)
 		if (!thread_handle)
 		{
 			logger::log_error("Failed to create shellcode thread");
+			success = false;
 			break;
 		}
 
@@ -114,6 +125,8 @@ void injection::manualmap::call_entrypoint(map_ctx& ctx)
 
 	// FREE SHELLCODE
 	this->process.free_memory(remote_buffer);
+
+	return success;
 }
 
 void injection::manualmap::relocate_image_by_delta(map_ctx& ctx)

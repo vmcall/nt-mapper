@@ -41,8 +41,6 @@ class portable_executable
 public:
 	portable_executable(std::vector<uint8_t>& new_buffer);
 
-	void parse();
-
 	// INFORMATION
 	IMAGE_DOS_HEADER* get_dos_header();
 	IMAGE_NT_HEADERS* get_nt_headers();
