@@ -8,7 +8,7 @@ PE mapper in c++17
 
 # Todo
 + Static TLS
-+ TLS callbacs
++ TLS callbacks
 
 # Thanks
 + DarthTon (BlackBone)
