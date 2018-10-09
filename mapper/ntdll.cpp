@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "ntdll.hpp"
 
 fnNtCreateSection ntdll::NtCreateSection = nullptr;

@@ -1,5 +1,8 @@
 #pragma once
-#include "stdafx.h"
+#include <Windows.h>
+#include <string>
+#include <vector>
+#include <unordered_map>
 
 struct reloc_item
 {
@@ -29,6 +32,7 @@ struct export_data
 {
 	std::string name;
 	uintptr_t function_rva;
+	uint16_t ordinal;
 };
 
 using relocation_list = std::vector<std::pair<reloc_data, reloc_item>>;

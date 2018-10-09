@@ -1,5 +1,6 @@
 #pragma once
-#include "stdafx.h"
+#include <vector>
+#include <string>
 
 class binary_file
 {

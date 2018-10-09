@@ -1,5 +1,6 @@
 #pragma once
-#include "stdafx.h"
+#include <Windows.h>
+#include <winternl.h>
 
 typedef NTSTATUS(NTAPI* fnNtCreateSection)(
 	PHANDLE sectionHandle,

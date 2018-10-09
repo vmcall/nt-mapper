@@ -1,5 +1,8 @@
-#include "stdafx.h"
 #include "ntdll.hpp"
+#include "process.hpp"
+#include "manualmap.hpp"
+#include "logger.hpp"
+#include "binary_file.hpp"
 
 int main()
 {
@@ -11,9 +14,11 @@ int main()
 	auto proc = process(process_id, PROCESS_ALL_ACCESS);
 	auto injector = injection::manualmap(proc);
 
-	auto buffer = binary_file::read_file("D:\\Sync\\TestPEs\\DLLTEST64.dll");
+	auto buffer = binary_file::read_file("D:\\unsanitized\\r6s_dll\\x64\\Release\\r6s_dll.dll");
 
-	injector.inject(buffer);
+	auto address = injector.inject(buffer);
+
+	logger::log_formatted("Injected buffer", address, true);
 
 	std::cin.get();
 

@@ -23,7 +23,7 @@
     <ProjectGuid>{76B7A704-E978-43F0-B627-47093398EDB2}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>mapper</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -95,7 +95,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -123,7 +123,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -140,6 +140,7 @@
   <ItemGroup>
     <ClInclude Include="api_set.hpp" />
     <ClInclude Include="binary_file.hpp" />
+    <ClInclude Include="cast.hpp" />
     <ClInclude Include="loadlibrary.hpp" />
     <ClInclude Include="logger.hpp" />
     <ClInclude Include="manualmap.hpp" />
@@ -148,8 +149,7 @@
     <ClInclude Include="portable_executable.hpp" />
     <ClInclude Include="process.hpp" />
     <ClInclude Include="safe_handle.hpp" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="targetver.h" />
+    <ClInclude Include="transformer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="api_set.cpp" />
@@ -162,12 +162,6 @@
     <ClCompile Include="portable_executable.cpp" />
     <ClCompile Include="process.cpp" />
     <ClCompile Include="safe_handle.cpp" />
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="dllmain_call_x64.asm" />

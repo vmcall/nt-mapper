@@ -1,6 +1,7 @@
-#include "stdafx.h"
 #include "memory_section.hpp"
 #include "ntdll.hpp"
+#include "logger.hpp"
+#include <windows.h>
 
 memory_section::memory_section(uint32_t page_protection, uint64_t size)
 {

@@ -1,5 +1,8 @@
-#include "stdafx.h"
 #include "api_set.hpp"
+
+#include <algorithm>
+#include <winternl.h>
+#include <string>
 
 api_set::api_set()
 {
@@ -18,7 +21,7 @@ api_set::api_set()
 		auto host_data = api_set->get_host(descriptor);
 
 		std::vector<std::wstring> hosts;
-		for (auto j = 0; j < host_data->count; j++)
+		for (std::uint32_t j = 0; j < host_data->count; j++)
 		{
 			auto host = host_data->entry(api_set, j);
 

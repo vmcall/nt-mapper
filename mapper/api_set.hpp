@@ -1,7 +1,8 @@
 #pragma once
-#include "stdafx.h"
+#include <Windows.h>
+#include <unordered_map>
 
-typedef struct API_SET_VALUE_ENTRY
+struct API_SET_VALUE_ENTRY
 {
 	ULONG flags;
 	ULONG name_offset;
@@ -10,7 +11,7 @@ typedef struct API_SET_VALUE_ENTRY
 	ULONG value_length;
 };
 
-typedef struct API_SET_VALUE_ARRAY
+struct API_SET_VALUE_ARRAY
 {
 	ULONG flags;
 	ULONG name_offset;
@@ -25,13 +26,13 @@ typedef struct API_SET_VALUE_ARRAY
 	}
 };
 
-typedef struct API_SET_NAMESPACE_ENTRY
+struct API_SET_NAMESPACE_ENTRY
 {
 	ULONG limit;
 	ULONG size;
 };
 
-typedef struct API_SET_NAMESPACE_ARRAY
+struct API_SET_NAMESPACE_ARRAY
 {
 	ULONG version;
 	ULONG size;

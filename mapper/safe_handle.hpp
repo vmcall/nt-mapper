@@ -1,5 +1,6 @@
 #pragma once
-#include "stdafx.h"
+#include <windows.h>
+#include <utility>
 
 class safe_handle
 {
@@ -17,14 +18,15 @@ public:
 	// MOVE CONSTRUCTOR
 	safe_handle(safe_handle&& other)
 		: handle(std::move(other.handle)) {
-		other.handle = NULL; // COPY TO NEW INSTANCE AND NULL OLD
+		other.handle = nullptr; // COPY TO NEW INSTANCE AND NULL OLD
 	} 
 
 	// MOVE ASSIGNMENT OPERATOR
 	safe_handle& operator= (safe_handle&& other)
+		//: handle(std::move(other.handle)) 
 	{
 		this->handle = std::move(other.handle); // COPY TO NEW INSTANCE AND NULL OLD
-		other.handle = NULL;
+		other.handle = nullptr;
 		return *this;
 	}
 	

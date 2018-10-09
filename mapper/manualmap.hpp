@@ -1,7 +1,12 @@
 #pragma once
-#include "stdafx.h"
 #include "process.hpp"
 #include "portable_executable.hpp"
+
+#include <string>
+#include <vector>
+#include <locale>
+#include <codecvt>
+#include <unordered_map>
 
 struct map_ctx
 {
@@ -25,6 +30,7 @@ struct map_ctx
 		image_name(new_image_name), pe(new_buffer){}
 };
 
+#pragma warning(disable:4996) // DEPRECATED LIBRARY :(
 using wstring_converter = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>;
 using module_list = std::unordered_map<std::string, uintptr_t>;
 
@@ -38,7 +44,7 @@ namespace injection
 
 	private:
 		bool map_image(map_ctx& ctx);
-		uintptr_t find_or_map_dependecy(const std::string& image_name);
+		uintptr_t find_or_map_dependency(const std::string& image_name);
 		void write_headers(map_ctx& ctx);
 		bool call_entrypoint(map_ctx& ctx);
 		void write_image_sections(map_ctx& ctx);

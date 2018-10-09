@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "loadlibrary.hpp"
 #include "process.hpp"
 #include "logger.hpp"

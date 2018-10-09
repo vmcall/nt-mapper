@@ -1,5 +1,5 @@
-#include "stdafx.h"
 #include "safe_handle.hpp"
+#include "logger.hpp"
 
 safe_handle::~safe_handle()
 {

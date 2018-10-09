@@ -1,7 +1,9 @@
 #pragma once
-#include "stdafx.h"
-#include "safe_handle.hpp"
 #include "memory_section.hpp"
+#include "safe_handle.hpp"
+#include <windows.h>
+#include <unordered_map>
+#include <string>
 
 class process
 {
@@ -9,6 +11,8 @@ public:
 	process(HANDLE handle) : handle(handle) {}
 	process(uint32_t id, DWORD desired_access) : handle(safe_handle(OpenProcess(desired_access, false, id))) { }
 	process() : handle() { }
+	
+	uintptr_t map(memory_section& section);
 
 	explicit operator bool();
 
@@ -21,11 +25,9 @@ public:
 	MEMORY_BASIC_INFORMATION virtual_query(const uintptr_t address);
 	uintptr_t raw_allocate(const SIZE_T virtual_size, const uintptr_t address = 0);
 	bool free_memory(const uintptr_t address);
-	bool read_raw_memory(void* buffer, const uintptr_t address, const SIZE_T size);
-	bool write_raw_memory(void* buffer, const SIZE_T size, const uintptr_t address);
+	bool read_raw_memory(const void* buffer, const uintptr_t address, const SIZE_T size);
+	bool write_raw_memory(const void* buffer, const SIZE_T size, const uintptr_t address);
 	bool virtual_protect(const uintptr_t address, uint32_t protect, uint32_t* old_protect);
-
-	uintptr_t map(memory_section& section);
 
 	template <class T>
 	inline uintptr_t allocate_and_write(const T& buffer)

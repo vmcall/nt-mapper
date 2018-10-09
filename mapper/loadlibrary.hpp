@@ -1,6 +1,6 @@
 #pragma once
-#include "stdafx.h"
 #include "process.hpp"
+#include <string>
 
 namespace injection
 {

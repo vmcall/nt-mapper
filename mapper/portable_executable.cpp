@@ -1,4 +1,6 @@
-#include "stdafx.h"
+#include "portable_executable.hpp"
+#include <vector>
+#include <algorithm>
 
 portable_executable::portable_executable(std::vector<uint8_t>& new_buffer) : buffer(new_buffer)
 {
@@ -89,7 +91,11 @@ import_list portable_executable::get_imports(uintptr_t image_base)
 	auto section = this->optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
 	auto import_table = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR*>(image_base + section.VirtualAddress);
 
-	for (; import_table->Name; ++import_table)
+
+	
+	for (auto previous_name = 0; // NAMES ARE IN MEMORY ORDER
+		previous_name < import_table->Name; 
+		previous_name = import_table->Name, ++import_table)
 	{
 		auto module_name = std::string(reinterpret_cast<char*>(image_base + (uintptr_t)import_table->Name));
 		std::transform(module_name.begin(), module_name.end(), module_name.begin(), ::tolower);
@@ -114,11 +120,25 @@ import_list portable_executable::get_imports(uintptr_t image_base)
 	return import_modules;
 }
 
+// THX DAAX <3
 export_list portable_executable::get_exports(uintptr_t image_base)
 {
 	export_list exports;
 
+	auto section = this->optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+	auto export_dir = reinterpret_cast<IMAGE_EXPORT_DIRECTORY*>(image_base + section.VirtualAddress);
 
+	for (unsigned int iter = 0; iter < export_dir->NumberOfFunctions; ++iter)
+	{
+		export_data data = { 0 };
+		data.name = reinterpret_cast<char*>(image_base + reinterpret_cast<unsigned long*>(image_base + export_dir->AddressOfNames)[iter]);
+		data.ordinal = reinterpret_cast<unsigned short*>(image_base + export_dir->AddressOfNameOrdinals)[iter];
+		data.function_rva = image_base + reinterpret_cast<unsigned long*>(image_base + export_dir->AddressOfFunctions)[iter];
+
+		exports[data.name].emplace_back(data);
+	}
+
+	return exports;
 
 	return exports;
 }

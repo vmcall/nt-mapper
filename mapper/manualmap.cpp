@@ -1,6 +1,8 @@
-#include "stdafx.h"
-#include "memory_section.hpp"
+#include "manualmap.hpp"
 #include "api_set.hpp"
+#include "logger.hpp"
+#include "binary_file.hpp"
+#include "cast.hpp"
 
 uintptr_t injection::manualmap::inject(const std::vector<uint8_t>& buffer)
 {
@@ -53,7 +55,7 @@ bool injection::manualmap::map_image(map_ctx& ctx)
 	return true;
 }
 
-uintptr_t injection::manualmap::find_or_map_dependecy(const std::string& image_name)
+uintptr_t injection::manualmap::find_or_map_dependency(const std::string& image_name)
 {
 	// HAVE WE MAPPED THIS MODULE ALREADY?
 	for (auto module : this->mapped_modules)
@@ -61,8 +63,11 @@ uintptr_t injection::manualmap::find_or_map_dependecy(const std::string& image_n
 			return module.remote_image;
 
 	// WAS THIS MODULE ALREADY LOADED BY LDR?
-	if (this->linked_modules.find(image_name) != this->linked_modules.end())
-		return this->linked_modules.at(image_name);
+	std::string copy = image_name;
+	auto iterator = this->linked_modules.find(copy);
+	auto end = this->linked_modules.end();
+	if (iterator != end)
+		return iterator->second;
 
 	// TODO: PROPER FILE SEARCHING
 	auto ctx = map_ctx(image_name, binary_file::read_file("C:\\Windows\\System32\\" + image_name));
@@ -86,10 +91,15 @@ void injection::manualmap::write_image_sections(map_ctx& ctx)
 bool injection::manualmap::call_entrypoint(map_ctx& ctx)
 {
 	// dllmain_call_x64.asm
-	uint8_t shellcode[] = { 0x48, 0x83, 0xEC, 0x28, 0x48, 0xB9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0xC7, 0xC2, 0x01, 0x00, 0x00, 0x00, 0x4D, 0x31, 0xC0, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x28, 0xC3 };
+	constexpr uint8_t shellcode[] = { 
+		0x48, 0x83, 0xEC, 0x28, 0x48, 0xB9, 
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+		0x48, 0xC7, 0xC2, 0x01, 0x00, 0x00, 0x00, 
+		0x4D, 0x31, 0xC0, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+		0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x28, 0xC3 };
 
-	*PPTR(shellcode + 0x6) = ctx.remote_image;
-	*PPTR(shellcode + 0x1A) = ctx.remote_image + ctx.pe.get_optional_header().AddressOfEntryPoint;
+	*cast::pointer(shellcode + 0x6) = ctx.remote_image;
+	*cast::pointer(shellcode + 0x1A) = ctx.remote_image + ctx.pe.get_optional_header().AddressOfEntryPoint;
 
 	auto remote_buffer = this->process.raw_allocate(sizeof(shellcode));
 
@@ -134,7 +144,7 @@ void injection::manualmap::relocate_image_by_delta(map_ctx& ctx)
 	auto delta = ctx.remote_image - ctx.pe.get_image_base();
 
 	for (auto&[entry, item] : ctx.pe.get_relocations(ctx.local_image))
-		*PPTR(ctx.local_image + entry.page_rva + item.get_offset()) += delta;
+		*cast::pointer(ctx.local_image + entry.page_rva + item.get_offset()) += delta;
 }
 
 void injection::manualmap::fix_import_table(map_ctx& ctx)
@@ -150,13 +160,17 @@ void injection::manualmap::fix_import_table(map_ctx& ctx)
 		if (api_schema.query(wide_module_name))
 			module_name = converter.to_bytes(wide_module_name);
 
-		auto module_handle = find_or_map_dependecy(module_name);
+		auto module_handle = find_or_map_dependency(module_name);
+
 		if (!module_handle)
+		{
 			logger::log_error("Failed to map dependency");
+			return;
+		}
 
 		for (const auto& fn : functions)
 		{	
-			*PPTR(ctx.local_image + fn.function_rva) = fn.ordinal > 0 ?
+			*cast::pointer(ctx.local_image + fn.function_rva) = fn.ordinal > 0 ?
 				this->process.get_module_export(module_handle, reinterpret_cast<const char*>(fn.ordinal)) :	// IMPORT BY ORDINAL
 				this->process.get_module_export(module_handle, fn.name.c_str());							// IMPORT BY NAME
 		}

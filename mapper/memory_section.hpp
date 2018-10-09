@@ -1,6 +1,6 @@
 #pragma once
-#include "stdafx.h"
-#include "process.hpp"
+#include "safe_handle.hpp"
+#include <cstdint>
 
 class memory_section
 {
