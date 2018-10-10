@@ -7,10 +7,10 @@ namespace injection
 	class loadlibrary
 	{
 	public:
-		loadlibrary(process& proc) : process(proc) {}
+		loadlibrary(native::process& proc) : process(proc) {}
 		bool inject(std::string& buffer);
 
 	protected:
-		process& process;
+		native::process& process;
 	};
 }

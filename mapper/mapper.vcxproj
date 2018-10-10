@@ -141,9 +141,11 @@
     <ClInclude Include="api_set.hpp" />
     <ClInclude Include="binary_file.hpp" />
     <ClInclude Include="cast.hpp" />
+    <ClInclude Include="executor.hpp" />
     <ClInclude Include="loadlibrary.hpp" />
     <ClInclude Include="logger.hpp" />
-    <ClInclude Include="manualmap.hpp" />
+    <ClInclude Include="manualmapper.hpp" />
+    <ClInclude Include="map_context.hpp" />
     <ClInclude Include="memory_section.hpp" />
     <ClInclude Include="ntdll.hpp" />
     <ClInclude Include="portable_executable.hpp" />
@@ -154,9 +156,11 @@
   <ItemGroup>
     <ClCompile Include="api_set.cpp" />
     <ClCompile Include="binary_file.cpp" />
+    <ClCompile Include="executor.cpp" />
     <ClCompile Include="loadlibrary.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="manualmap.cpp" />
+    <ClCompile Include="manualmapper.cpp" />
+    <ClCompile Include="map_context.cpp" />
     <ClCompile Include="memory_section.cpp" />
     <ClCompile Include="ntdll.cpp" />
     <ClCompile Include="portable_executable.cpp" />

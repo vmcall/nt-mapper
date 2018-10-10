@@ -5,17 +5,17 @@
 #include <Psapi.h>
 #include <algorithm>
 
-process::operator bool()
+native::process::operator bool()
 {
 	return static_cast<bool>(this->handle);
 }
 
-process process::current_process()
+native::process native::process::current_process()
 {
 	return process(reinterpret_cast<HANDLE>(-1));
 }
 
-uint32_t process::from_name(const std::string& process_name)
+uint32_t native::process::id_from_name(const std::string& process_name)
 {
 	DWORD process_list[516], bytes_needed;
 	if (EnumProcesses(process_list, sizeof(process_list), &bytes_needed))
@@ -35,7 +35,7 @@ uint32_t process::from_name(const std::string& process_name)
 	return 0;
 }
 
-MEMORY_BASIC_INFORMATION process::virtual_query(const uintptr_t address)
+MEMORY_BASIC_INFORMATION native::process::virtual_query(const uintptr_t address)
 {
 	MEMORY_BASIC_INFORMATION mbi;
 
@@ -44,20 +44,20 @@ MEMORY_BASIC_INFORMATION process::virtual_query(const uintptr_t address)
 	return mbi;
 }
 
-uintptr_t process::raw_allocate(const SIZE_T virtual_size, const uintptr_t address)
+uintptr_t native::process::raw_allocate(const SIZE_T virtual_size, const uintptr_t address)
 {
 	return reinterpret_cast<uintptr_t>(
 		VirtualAllocEx(this->handle.get_handle(), reinterpret_cast<LPVOID>(address), virtual_size, MEM_COMMIT, PAGE_EXECUTE_READWRITE)
 		);
 }
 
-bool process::free_memory(const uintptr_t address)
+bool native::process::free_memory(const uintptr_t address)
 {
 	return VirtualFreeEx(this->handle.get_handle(), reinterpret_cast<LPVOID>(address), NULL, MEM_RELEASE);
 }
 
 
-bool process::read_raw_memory(const void* buffer, const uintptr_t address, const SIZE_T size)
+bool native::process::read_raw_memory(const void* buffer, const uintptr_t address, const SIZE_T size)
 {
 	return ReadProcessMemory(
 		this->handle.get_handle(),
@@ -67,7 +67,7 @@ bool process::read_raw_memory(const void* buffer, const uintptr_t address, const
 		nullptr);
 }
 
-bool process::write_raw_memory(const void* buffer, const SIZE_T size, const uintptr_t address)
+bool native::process::write_raw_memory(const void* buffer, const SIZE_T size, const uintptr_t address)
 {
 	return WriteProcessMemory(
 		this->handle.get_handle(),
@@ -77,7 +77,7 @@ bool process::write_raw_memory(const void* buffer, const SIZE_T size, const uint
 		nullptr);
 }
 
-bool process::virtual_protect(const uintptr_t address, uint32_t protect, uint32_t* old_protect)
+bool native::process::virtual_protect(const uintptr_t address, uint32_t protect, uint32_t* old_protect)
 {
 	return VirtualProtectEx(
 		this->handle.get_handle(),
@@ -87,7 +87,7 @@ bool process::virtual_protect(const uintptr_t address, uint32_t protect, uint32_
 		reinterpret_cast<PDWORD>(old_protect));
 }
 
-uintptr_t process::map(memory_section& section)
+uintptr_t native::process::map(memory_section& section)
 {
 	void* base_address = nullptr;
 	SIZE_T view_size = section.size;
@@ -110,7 +110,42 @@ uintptr_t process::map(memory_section& section)
 	return reinterpret_cast<uintptr_t>(base_address);
 }
 
-std::unordered_map<std::string, uintptr_t> process::get_modules()
+HWND native::process::get_main_window()
+{
+	// SETUP CONTAINER
+	using window_data_t = std::pair<std::int32_t, HWND>;
+	window_data_t window_data = window_data_t{ this->get_id(), 0 };
+
+	logger::log_formatted("Process id", window_data.first, false);
+
+	// ENUMERATE WINDOWS TO FIND 
+	EnumWindows([](HWND handle, LPARAM param) -> BOOL
+	{
+		auto data = reinterpret_cast<window_data_t*>(param);
+
+		logger::log_formatted("Handle", handle, false);
+
+		DWORD process_id = 0;
+		if (!GetWindowThreadProcessId(handle, &process_id) || process_id != data->first)
+			return TRUE; // CONTINUE
+
+		SetLastError(-1);
+		data->second = handle;
+		return FALSE;
+	}, reinterpret_cast<LPARAM>(&window_data));
+
+	logger::log_formatted("Main", window_data.second, false);
+
+	// RETURN WINDOW
+	return window_data.second;
+}
+
+std::int32_t native::process::get_id()
+{
+	return GetProcessId(this->handle.get_handle());
+}
+
+std::unordered_map<std::string, uintptr_t> native::process::get_modules()
 {
 	auto result = std::unordered_map<std::string, uintptr_t>();
 
@@ -145,7 +180,7 @@ std::unordered_map<std::string, uintptr_t> process::get_modules()
 	return result;
 }
 
-std::string process::get_name()
+std::string native::process::get_name()
 {
 	char buffer[MAX_PATH];
 	GetModuleBaseNameA(handle.get_handle(), nullptr, buffer, MAX_PATH);
@@ -154,7 +189,7 @@ std::string process::get_name()
 }
 
 // thx blackbone :)
-uintptr_t process::get_module_export(uintptr_t module_handle, const char* function_ordinal)
+uintptr_t native::process::get_module_export(uintptr_t module_handle, const char* function_ordinal)
 {
 	IMAGE_DOS_HEADER dos_header;
 	IMAGE_NT_HEADERS64 nt_header;
@@ -267,7 +302,7 @@ uintptr_t process::get_module_export(uintptr_t module_handle, const char* functi
 	return 0;
 }
 
-HANDLE process::create_thread(const uintptr_t address, const uintptr_t argument)
+HANDLE native::process::create_thread(const uintptr_t address, const uintptr_t argument)
 {
 	return CreateRemoteThread(this->handle.get_handle(), nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(address), reinterpret_cast<LPVOID>(argument), 0, nullptr);
 }

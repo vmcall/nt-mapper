@@ -1,22 +1,22 @@
 #include "ntdll.hpp"
 #include "process.hpp"
-#include "manualmap.hpp"
+#include "manualmapper.hpp"
 #include "logger.hpp"
 #include "binary_file.hpp"
 
 int main()
 {
+	// INTIALISE NATIVE FUNCTIONS
 	ntdll::initialise();
 
-	auto process_id = process::from_name("notepad.exe");
+	// FIND PROCESS
+	const auto process_id = native::process::id_from_name("notepad.exe");
 	logger::log_formatted("Target process id", process_id);
-	
-	auto proc = process(process_id, PROCESS_ALL_ACCESS);
-	auto injector = injection::manualmap(proc);
+	auto proc = native::process(process_id, PROCESS_ALL_ACCESS);
 
-	auto buffer = binary_file::read_file("D:\\unsanitized\\r6s_dll\\x64\\Release\\r6s_dll.dll");
-
-	auto address = injector.inject(buffer);
+	// READ BUFFER
+	const auto buffer = binary_file::read_file("D:\\Sync\\TestPEs\\DLLTEST_CONSOLE.dll");
+	const auto address = injection::manualmapper(proc).inject(buffer, injection::executor::mode::CREATE_THREAD);
 
 	logger::log_formatted("Injected buffer", address, true);
 

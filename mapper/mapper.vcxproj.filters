@@ -45,9 +45,6 @@
     <ClInclude Include="loadlibrary.hpp">
       <Filter>Header Files\Injection</Filter>
     </ClInclude>
-    <ClInclude Include="manualmap.hpp">
-      <Filter>Header Files\Injection</Filter>
-    </ClInclude>
     <ClInclude Include="binary_file.hpp">
       <Filter>Header Files\Helpers</Filter>
     </ClInclude>
@@ -78,15 +75,21 @@
     <ClInclude Include="transformer.hpp">
       <Filter>Header Files\Helpers</Filter>
     </ClInclude>
+    <ClInclude Include="map_context.hpp">
+      <Filter>Header Files\Injection</Filter>
+    </ClInclude>
+    <ClInclude Include="manualmapper.hpp">
+      <Filter>Header Files\Injection</Filter>
+    </ClInclude>
+    <ClInclude Include="executor.hpp">
+      <Filter>Header Files\Injection</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="loadlibrary.cpp">
-      <Filter>Source Files\Injection</Filter>
-    </ClCompile>
-    <ClCompile Include="manualmap.cpp">
       <Filter>Source Files\Injection</Filter>
     </ClCompile>
     <ClCompile Include="binary_file.cpp">
@@ -109,6 +112,15 @@
     </ClCompile>
     <ClCompile Include="api_set.cpp">
       <Filter>Source Files\Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="manualmapper.cpp">
+      <Filter>Source Files\Injection</Filter>
+    </ClCompile>
+    <ClCompile Include="executor.cpp">
+      <Filter>Source Files\Injection</Filter>
+    </ClCompile>
+    <ClCompile Include="map_context.cpp">
+      <Filter>Source Files\Injection</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
