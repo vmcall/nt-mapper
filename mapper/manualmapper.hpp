@@ -3,6 +3,7 @@
 #include "portable_executable.hpp"
 #include "map_context.hpp"
 #include "executor.hpp"
+#include "api_set.hpp"
 
 #include <string>
 #include <vector>
@@ -35,6 +36,7 @@ namespace injection
 		void write_image_sections(map_ctx& ctx);
 		void relocate_image_by_delta(map_ctx& ctx);
 		void fix_import_table(map_ctx& ctx);
+		native::process::module_export handle_forwarded_export(native::process::module_export& exported_function, api_set& api_schema);
 
 		module_list m_linked_modules;
 		std::vector<map_ctx> m_mapped_modules;

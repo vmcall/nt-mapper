@@ -1,5 +1,4 @@
 #include "manualmapper.hpp"
-#include "api_set.hpp"
 #include "logger.hpp"
 #include "binary_file.hpp"
 #include "cast.hpp"
@@ -156,31 +155,10 @@ void injection::manualmapper::fix_import_table(map_ctx& ctx)
 			// HANDLE FORWARDED EXPORTS RECURSIVELY
 			while (exported_function.forwarded)
 			{
-				logger::log_formatted("Function name", exported_function.forwarded_name, false);
-
-				// QUERY API SCHEMA FOR NAME
-				auto forwarded_name = exported_function.forwarded_library;
-				std::wstring wide_forwarded_library_name = converter.from_bytes(forwarded_name.c_str());
-				if (api_schema.query(wide_forwarded_library_name))
-					forwarded_name = converter.to_bytes(wide_forwarded_library_name);
-
-				logger::log_formatted("Library name", forwarded_name, false);
-
-				// TODO: PROPER FILE SEARCHING?
-				binary_file file("C:\\Windows\\System32\\" + forwarded_name);
-				auto forwarded_ctx = map_ctx(forwarded_name, file.buffer());
-
-				// MAP FORWARDED LIBRARY
-				if (map_image(forwarded_ctx))
-				{
-					logger::log_error("Failed to map forwarded library.");
-					continue;
-				}
-
-				// FIND FORWARDED EXPORT
-				exported_function = this->process().get_module_export(forwarded_ctx.remote_image(), exported_function.forwarded_name.c_str());
+				exported_function = handle_forwarded_export(exported_function, api_schema);
 			}
 			
+			// UPDATE IMPORTED FUNCTION POINTER
 			if (exported_function.function != 0x00)
 			{
 				*cast::pointer(ctx.local_image() + fn.function_rva) = exported_function.function;
@@ -192,6 +170,34 @@ void injection::manualmapper::fix_import_table(map_ctx& ctx)
 			}
 		}
 	}
+}
+
+native::process::module_export injection::manualmapper::handle_forwarded_export(native::process::module_export& exported_function, api_set& api_schema)
+{
+
+	// QUERY API SCHEMA FOR NAME
+	wstring_converter converter;
+	auto library_name = exported_function.forwarded_library;
+	std::wstring wide_forwarded_library_name = converter.from_bytes(library_name.c_str());
+	if (api_schema.query(wide_forwarded_library_name))
+		library_name = converter.to_bytes(wide_forwarded_library_name);
+
+	logger::log_formatted("Library name", library_name, false);
+	logger::log_formatted("Function name", exported_function.forwarded_name, false);
+
+	// TODO: PROPER FILE SEARCHING?
+	binary_file file("C:\\Windows\\System32\\" + library_name);
+	auto forwarded_ctx = map_ctx(library_name, file.buffer());
+
+	// MAP FORWARDED LIBRARY
+	if (map_image(forwarded_ctx))
+	{
+		logger::log_error("Failed to map forwarded library.");
+		return native::process::module_export(0x00);
+	}
+
+	// FIND FORWARDED EXPORT
+	return this->process().get_module_export(forwarded_ctx.remote_image(), exported_function.forwarded_name.c_str());
 }
 
 injection::manualmapper::module_list& injection::manualmapper::linked_modules()

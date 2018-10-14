@@ -198,7 +198,6 @@ native::process::module_export native::process::get_module_export(uintptr_t modu
 		return native::process::module_export(0x00);
 	}
 
-
 	auto export_data_raw = std::make_unique<std::byte[]>(export_base_size);
 	auto export_data = reinterpret_cast<IMAGE_EXPORT_DIRECTORY*>(export_data_raw.get());
 

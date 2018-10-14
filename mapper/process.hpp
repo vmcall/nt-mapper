@@ -88,7 +88,6 @@ namespace native
 			std::string forwarded_library;
 			std::string forwarded_name;
 		};
-
 		native::process::module_export get_module_export(uintptr_t module_handle, const char* function_ordinal);
 
 		// THREAD
