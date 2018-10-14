@@ -1,47 +1,48 @@
 #include "loadlibrary.hpp"
 #include "process.hpp"
 #include "logger.hpp"
+#include "safe_memory.hpp"
 
 
-bool injection::loadlibrary::inject(std::string& buffer)
+bool injection::loadlibrary::inject(std::string_view buffer)
 {
-	// ALLOCATE LIBRARY PATH TO PROCESS MEMORY
-	auto path_pointer = this->process.raw_allocate(buffer.length());
-	if (!path_pointer)
+	// ALLOCATE AND INITIALISE MEMORY HANDLER (RAII)
+	auto remote_buffer = safe_memory(
+		&process,
+		process.raw_allocate(buffer.size()));
+
+	// FAILED TO ALLOCATE?
+	if (!remote_buffer)
 	{
-		logger::log_error("Failed to allocate memory!");
+		logger::log_error("Failed to allocate path");
 		return false;
 	}
 
-	do
+	// FAILED TO WRITE?
+	if (!process.write_raw_memory(buffer.data(), buffer.length(), remote_buffer.memory()))
 	{
-		// WRITE LIBRARY PATH TO PROCESS MEMORY
-		if (!this->process.write_raw_memory(buffer.data(), buffer.length(), path_pointer))
-		{
-			logger::log_error("Failed to write library path!");
-			break;
-		}
+		logger::log_error("Failed to write path");
+		return false;
+	}
 
-		// FIND LOADLIBRARY FUNCTION POINTER
-		auto module_handle = GetModuleHandle(L"kernel32.dll");
-		auto function_pointer = reinterpret_cast<uintptr_t>(GetProcAddress(module_handle, "LoadLibraryA"));
+	// FIND LOADLIBRARY
+	const auto module_handle = GetModuleHandle(L"kernel32.dll");
+	const auto function_pointer = reinterpret_cast<uintptr_t>(GetProcAddress(module_handle, "LoadLibraryA"));
 
-		// EXECUTE LOADLIBRARY IN REMOTE PROCESS
-		auto thread_handle = safe_handle(this->process.create_thread(function_pointer, path_pointer));
+	// FAILED TO CREATE THREAD?
+	auto thread = process.create_thread(function_pointer, 0x00);
+	if (!thread)
+	{
+		logger::log_error("Failed to create loadlibrary thread");
+		return false;
+	}
 
-		if (!thread_handle)
-		{
-			logger::log_error("Failed to create thread!");
-			break;
-		}
+	// FAILED TO WAIT FOR THREAD?
+	if (thread.wait(INFINITE) == WAIT_FAILED)
+	{
+		logger::log_error("Failed to wait for loadlibrary thread");
+		return false;
+	}
 
-		// WAIT FOR THREAD TO FINISH
-		WaitForSingleObject(thread_handle.handle(), INFINITE);
-	} while (false);
-	
-
-	// FREE LIBRARY PATH FROM PROCESS MEMORY
-	this->process.free_memory(path_pointer);
-
-	return false;
+	return true;
 }

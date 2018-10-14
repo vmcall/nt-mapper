@@ -8,7 +8,7 @@ namespace injection
 	{
 	public:
 		loadlibrary(native::process& proc) : process(proc) {}
-		bool inject(std::string& buffer);
+		bool inject(std::string_view buffer);
 
 	protected:
 		native::process& process;

@@ -34,7 +34,7 @@ MEMORY_BASIC_INFORMATION native::process::virtual_query(const uintptr_t address)
 {
 	MEMORY_BASIC_INFORMATION mbi;
 
-	VirtualQueryEx(this->handle.handle(), reinterpret_cast<LPCVOID>(address), &mbi, sizeof(MEMORY_BASIC_INFORMATION));
+	VirtualQueryEx(this->handle().unsafe_handle(), reinterpret_cast<LPCVOID>(address), &mbi, sizeof(MEMORY_BASIC_INFORMATION));
 
 	return mbi;
 }
@@ -42,20 +42,20 @@ MEMORY_BASIC_INFORMATION native::process::virtual_query(const uintptr_t address)
 uintptr_t native::process::raw_allocate(const SIZE_T virtual_size, const uintptr_t address)
 {
 	return reinterpret_cast<uintptr_t>(
-		VirtualAllocEx(this->handle.handle(), reinterpret_cast<LPVOID>(address), virtual_size, MEM_COMMIT, PAGE_EXECUTE_READWRITE)
+		VirtualAllocEx(this->handle().unsafe_handle(), reinterpret_cast<LPVOID>(address), virtual_size, MEM_COMMIT, PAGE_EXECUTE_READWRITE)
 		);
 }
 
 bool native::process::free_memory(const uintptr_t address)
 {
-	return VirtualFreeEx(this->handle.handle(), reinterpret_cast<LPVOID>(address), NULL, MEM_RELEASE);
+	return VirtualFreeEx(this->handle().unsafe_handle(), reinterpret_cast<LPVOID>(address), NULL, MEM_RELEASE);
 }
 
 
 bool native::process::read_raw_memory(const void* buffer, const uintptr_t address, const SIZE_T size)
 {
 	return ReadProcessMemory(
-		this->handle.handle(),
+		this->handle().unsafe_handle(),
 		reinterpret_cast<LPCVOID>(address),
 		const_cast<void*>(buffer),
 		size,
@@ -65,7 +65,7 @@ bool native::process::read_raw_memory(const void* buffer, const uintptr_t addres
 bool native::process::write_raw_memory(const void* buffer, const SIZE_T size, const uintptr_t address)
 {
 	return WriteProcessMemory(
-		this->handle.handle(),
+		this->handle().unsafe_handle(),
 		reinterpret_cast<LPVOID>(address),
 		buffer,
 		size,
@@ -75,7 +75,7 @@ bool native::process::write_raw_memory(const void* buffer, const SIZE_T size, co
 bool native::process::virtual_protect(const uintptr_t address, uint32_t protect, uint32_t* old_protect)
 {
 	return VirtualProtectEx(
-		this->handle.handle(),
+		this->handle().unsafe_handle(),
 		reinterpret_cast<LPVOID>(address),
 		0x1000,
 		protect,
@@ -88,8 +88,8 @@ uintptr_t native::process::map(memory_section& section)
 	SIZE_T view_size = section.size;
 
 	auto result = ntdll::NtMapViewOfSection(
-		section.handle.handle(),
-		this->handle.handle(),
+		section.handle.unsafe_handle(),
+		this->handle().unsafe_handle(),
 		&base_address,
 		NULL, NULL, NULL,
 		&view_size,
@@ -137,7 +137,7 @@ HWND native::process::get_main_window()
 
 std::int32_t native::process::get_id()
 {
-	return GetProcessId(this->handle.handle());
+	return GetProcessId(this->handle().unsafe_handle());
 }
 
 std::unordered_map<std::string, uintptr_t> native::process::get_modules()
@@ -147,7 +147,7 @@ std::unordered_map<std::string, uintptr_t> native::process::get_modules()
 	HMODULE module_handles[1024];
 	DWORD size_needed;
 
-	if (!EnumProcessModules(this->handle.handle(), module_handles, sizeof(module_handles), &size_needed))
+	if (!EnumProcessModules(this->handle().unsafe_handle(), module_handles, sizeof(module_handles), &size_needed))
 		return result;
 
 	for (auto module_index = 0; module_index < size_needed / sizeof(HMODULE); module_index++)
@@ -157,7 +157,7 @@ std::unordered_map<std::string, uintptr_t> native::process::get_modules()
 
 		// GET MODULE NAME
 		GetModuleBaseNameA(
-			this->handle.handle(),
+			this->handle().unsafe_handle(),
 			module_handles[module_index],
 			const_cast<char*>(module_name.c_str()),
 			static_cast<DWORD>(module_name.size()));
@@ -178,7 +178,7 @@ std::unordered_map<std::string, uintptr_t> native::process::get_modules()
 std::string native::process::get_name()
 {
 	char buffer[MAX_PATH];
-	GetModuleBaseNameA(handle.handle(), nullptr, buffer, MAX_PATH);
+	GetModuleBaseNameA(this->handle().unsafe_handle(), nullptr, buffer, MAX_PATH);
 
 	return std::string(buffer);
 }
@@ -258,7 +258,7 @@ uintptr_t native::process::get_module_export(uintptr_t module_handle, const char
 
 		// FORWARDED EXPORT?
 		// IF FUNCTION POINTER IS INSIDE THE EXPORT DIRECTORY, IT IS *NOT* A FUNCTION POINTER!
-		// FUCKING SHIT MSVCP140 
+		// FUCKING SHIT MSVCPxxx
 		// FUCK YOU
 		const auto function_pointer = module_handle + address_of_functions[ordinal];
 		const auto directory_start = module_handle + export_base;
@@ -297,7 +297,17 @@ uintptr_t native::process::get_module_export(uintptr_t module_handle, const char
 	return 0;
 }
 
-HANDLE native::process::create_thread(const uintptr_t address, const uintptr_t argument)
+native::thread native::process::create_thread(const uintptr_t address, const uintptr_t argument)
 {
-	return CreateRemoteThread(this->handle.handle(), nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(address), reinterpret_cast<LPVOID>(argument), 0, nullptr);
+	const auto casted_function = reinterpret_cast<LPTHREAD_START_ROUTINE>(address);
+	const auto casted_argument = reinterpret_cast<LPVOID>(argument);
+
+	const auto thread_handle = CreateRemoteThread(this->handle().unsafe_handle(), nullptr, 0, casted_function, casted_argument, 0, nullptr);
+
+	return native::thread(thread_handle);
+}
+
+safe_handle& native::process::handle()
+{
+	return this->m_handle;
 }

@@ -156,6 +156,7 @@
     <ClInclude Include="safe_handle.hpp" />
     <ClInclude Include="safe_memory.hpp" />
     <ClInclude Include="shellcode.hpp" />
+    <ClInclude Include="thread.hpp" />
     <ClInclude Include="transformer.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -172,6 +173,7 @@
     <ClCompile Include="portable_executable.cpp" />
     <ClCompile Include="process.cpp" />
     <ClCompile Include="shellcode.cpp" />
+    <ClCompile Include="thread.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dllmain_call_x64.asm" />

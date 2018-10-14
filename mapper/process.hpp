@@ -1,33 +1,32 @@
 #pragma once
 #include "memory_section.hpp"
 #include "safe_handle.hpp"
+#include "thread.hpp"
 
 #include <windows.h>
 #include <unordered_map>
 #include <string>
-
 
 namespace native
 {
 	class process
 	{
 	public:
-		process(HANDLE handle) : handle(handle) {}
-		process(uint32_t id, DWORD desired_access) : handle(safe_handle(OpenProcess(desired_access, false, id))) { }
+		process(HANDLE handle) : m_handle(handle) {}
+		process(uint32_t id, DWORD desired_access) : m_handle(safe_handle(OpenProcess(desired_access, false, id))) { }
 		process() { }
 
 		uintptr_t map(memory_section& section);
 
 		explicit operator bool()
 		{
-			return static_cast<bool>(this->handle);
+			return this->handle().unsafe_handle() != nullptr;
 		}
 
 		// STATICS
 		static process current_process();
 		static uint32_t id_from_name(const std::string& process_name);
 
-		
 		// MEMORY
 		MEMORY_BASIC_INFORMATION virtual_query(const uintptr_t address);
 		uintptr_t raw_allocate(const SIZE_T virtual_size, const uintptr_t address = 0);
@@ -75,10 +74,13 @@ namespace native
 		uintptr_t get_module_export(uintptr_t module_handle, const char* function_ordinal);
 
 		// THREAD
-		HANDLE create_thread(const uintptr_t address, const uintptr_t argument = 0);
+		native::thread create_thread(const uintptr_t address, const uintptr_t argument = 0);
+
+
+		safe_handle& handle();
 
 	private:
-		safe_handle handle;
+		safe_handle m_handle;
 	};
 }
 

@@ -102,6 +102,9 @@
     <ClInclude Include="maker.hpp">
       <Filter>Header Files\Helpers</Filter>
     </ClInclude>
+    <ClInclude Include="thread.hpp">
+      <Filter>Header Files\Interop</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -142,6 +145,9 @@
     </ClCompile>
     <ClCompile Include="shellcode.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="thread.cpp">
+      <Filter>Source Files\Interop</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

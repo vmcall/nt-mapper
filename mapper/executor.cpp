@@ -63,15 +63,15 @@ bool injection::executor::handle_create(map_ctx& ctx, native::process& process)
 	}
 
 	// FAILED TO CREATE THREAD?
-	auto thread_handle = safe_handle(process.create_thread(remote_buffer.memory(), NULL));
-	if (!thread_handle)
+	auto thread = process.create_thread(remote_buffer.memory(), 0x00);
+	if (!thread)
 	{
 		logger::log_error("Failed to create shellcode thread");
 		return false;
 	}
 
 	// FAILED TO WAIT FOR THREAD?
-	if (WaitForSingleObject(thread_handle.handle(), INFINITE) == WAIT_FAILED)
+	if (thread.wait(INFINITE) == WAIT_FAILED)
 	{
 		logger::log_error("Failed to wait for shellcode thread");
 		return false;
