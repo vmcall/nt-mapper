@@ -76,14 +76,12 @@ uintptr_t injection::manualmapper::find_or_map_dependency(const std::string& ima
 		if (module.image_name() == image_name)
 			return module.remote_image();
 	}
-		
 
 	// WAS THIS DEPENDENCY ALREADY LOADED BY LDR?
 	if (auto iterator = this->linked_modules().find(image_name); iterator != this->linked_modules().end())
 		return iterator->second;
 
 	// TODO: PROPER FILE SEARCHING?
-
 	binary_file file("C:\\Windows\\System32\\" + image_name);
 	auto ctx = map_ctx(image_name, file.buffer());
 
@@ -136,23 +134,62 @@ void injection::manualmapper::fix_import_table(map_ctx& ctx)
 	{
 		auto module_name = map_key; 
 
+		// QUERY API SCHEMA FOR NAME
 		std::wstring wide_module_name = converter.from_bytes(module_name.c_str());
 		if (api_schema.query(wide_module_name))
 			module_name = converter.to_bytes(wide_module_name);
 
 		const auto module_handle = find_or_map_dependency(module_name);
-
 		if (!module_handle)
 		{
 			logger::log_error("Failed to map dependency");
 			return;
 		}
 
+		// ITERATE IMPORTED FUNCTIONS
 		for (const auto& fn : functions)
 		{
-			*cast::pointer(ctx.local_image() + fn.function_rva) = fn.ordinal > 0 ?
-				this->process().get_module_export(module_handle, reinterpret_cast<const char*>(fn.ordinal)) :	// IMPORT BY ORDINAL
-				this->process().get_module_export(module_handle, fn.name .c_str());								// IMPORT BY NAME
+			// GET THE FUNCTION EXPORT
+			const auto function_ordinal = fn.ordinal > 0 ? reinterpret_cast<const char*>(fn.ordinal) : fn.name.c_str();
+			auto exported_function = this->process().get_module_export(module_handle, function_ordinal);
+
+			// HANDLE FORWARDED EXPORTS RECURSIVELY
+			while (exported_function.forwarded)
+			{
+				logger::log_formatted("Function name", exported_function.forwarded_name, false);
+
+				// QUERY API SCHEMA FOR NAME
+				auto forwarded_name = exported_function.forwarded_library;
+				std::wstring wide_forwarded_library_name = converter.from_bytes(forwarded_name.c_str());
+				if (api_schema.query(wide_forwarded_library_name))
+					forwarded_name = converter.to_bytes(wide_forwarded_library_name);
+
+				logger::log_formatted("Library name", forwarded_name, false);
+
+				// TODO: PROPER FILE SEARCHING?
+				binary_file file("C:\\Windows\\System32\\" + forwarded_name);
+				auto forwarded_ctx = map_ctx(forwarded_name, file.buffer());
+
+				// MAP FORWARDED LIBRARY
+				if (map_image(forwarded_ctx))
+				{
+					logger::log_error("Failed to map forwarded library.");
+					continue;
+				}
+
+				// FIND FORWARDED EXPORT
+				exported_function = this->process().get_module_export(forwarded_ctx.remote_image(), exported_function.forwarded_name.c_str());
+			}
+			
+			if (exported_function.function != 0x00)
+			{
+				*cast::pointer(ctx.local_image() + fn.function_rva) = exported_function.function;
+			}
+			else
+			{
+				logger::log_error("Failed to handle imported function.");
+				logger::log_formatted("Function name", function_ordinal, false);
+			}
 		}
 	}
 }

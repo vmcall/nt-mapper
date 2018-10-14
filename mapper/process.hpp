@@ -71,7 +71,25 @@ namespace native
 		std::int32_t get_id();
 		std::unordered_map<std::string, uintptr_t> get_modules();
 		std::string get_name();
-		uintptr_t get_module_export(uintptr_t module_handle, const char* function_ordinal);
+
+		// PARSE EXPORTS
+		struct module_export
+		{
+			// CTOR FROM FUNCTION POINTER
+			module_export(uintptr_t new_function) : 
+				function(new_function), forwarded(false), forwarded_library(), forwarded_name() {}
+
+			// CTOR FROM FORWARD INFO
+			module_export(std::string_view library, std::string_view name) : 
+				function(0x00), forwarded(true), forwarded_library(library), forwarded_name(name) {}
+
+			uintptr_t function;
+			bool forwarded;
+			std::string forwarded_library;
+			std::string forwarded_name;
+		};
+
+		native::process::module_export get_module_export(uintptr_t module_handle, const char* function_ordinal);
 
 		// THREAD
 		native::thread create_thread(const uintptr_t address, const uintptr_t argument = 0);
@@ -83,8 +101,3 @@ namespace native
 		safe_handle m_handle;
 	};
 }
-
-
-
-
-
