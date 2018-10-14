@@ -1,11 +1,11 @@
 #include "portable_executable.hpp"
+#include "transformer.hpp"
 #include <vector>
 #include <algorithm>
 
-portable_executable::portable_executable(std::vector<uint8_t>& new_buffer) : buffer(new_buffer)
+portable_executable::portable_executable(std::vector<std::byte>& new_buffer) : buffer(new_buffer)
 {
 	// READ HEADERS
-
 	if (this->buffer.data())
 	{
 		this->dos_header = reinterpret_cast<IMAGE_DOS_HEADER*>(this->buffer.data());
@@ -48,7 +48,7 @@ section_list& portable_executable::get_sections()
 	return this->sections;
 }
 
-std::vector<uint8_t>& portable_executable::get_buffer()
+std::vector<std::byte>& portable_executable::get_buffer()
 {
 	return this->buffer;
 }
@@ -93,12 +93,14 @@ import_list portable_executable::get_imports(uintptr_t image_base)
 
 
 	
-	for (auto previous_name = 0; // NAMES ARE IN MEMORY ORDER
+	for (std::uint32_t previous_name = 0; // NAMES ARE IN MEMORY ORDER
 		previous_name < import_table->Name; 
 		previous_name = import_table->Name, ++import_table)
 	{
 		auto module_name = std::string(reinterpret_cast<char*>(image_base + (uintptr_t)import_table->Name));
-		std::transform(module_name.begin(), module_name.end(), module_name.begin(), ::tolower);
+
+		// CONVERT TO LOWER
+		transformer::string_to_lower(module_name);
 
 		auto entry = reinterpret_cast<IMAGE_THUNK_DATA64*>(image_base + import_table->OriginalFirstThunk);
 		for (uintptr_t index = 0; entry->u1.AddressOfData; index += sizeof(uintptr_t), ++entry)

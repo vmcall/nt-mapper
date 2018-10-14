@@ -5,11 +5,6 @@
 #include <Psapi.h>
 #include <algorithm>
 
-native::process::operator bool()
-{
-	return static_cast<bool>(this->handle);
-}
-
 native::process native::process::current_process()
 {
 	return process(reinterpret_cast<HANDLE>(-1));
@@ -39,7 +34,7 @@ MEMORY_BASIC_INFORMATION native::process::virtual_query(const uintptr_t address)
 {
 	MEMORY_BASIC_INFORMATION mbi;
 
-	VirtualQueryEx(this->handle.get_handle(), reinterpret_cast<LPCVOID>(address), &mbi, sizeof(MEMORY_BASIC_INFORMATION));
+	VirtualQueryEx(this->handle.handle(), reinterpret_cast<LPCVOID>(address), &mbi, sizeof(MEMORY_BASIC_INFORMATION));
 
 	return mbi;
 }
@@ -47,20 +42,20 @@ MEMORY_BASIC_INFORMATION native::process::virtual_query(const uintptr_t address)
 uintptr_t native::process::raw_allocate(const SIZE_T virtual_size, const uintptr_t address)
 {
 	return reinterpret_cast<uintptr_t>(
-		VirtualAllocEx(this->handle.get_handle(), reinterpret_cast<LPVOID>(address), virtual_size, MEM_COMMIT, PAGE_EXECUTE_READWRITE)
+		VirtualAllocEx(this->handle.handle(), reinterpret_cast<LPVOID>(address), virtual_size, MEM_COMMIT, PAGE_EXECUTE_READWRITE)
 		);
 }
 
 bool native::process::free_memory(const uintptr_t address)
 {
-	return VirtualFreeEx(this->handle.get_handle(), reinterpret_cast<LPVOID>(address), NULL, MEM_RELEASE);
+	return VirtualFreeEx(this->handle.handle(), reinterpret_cast<LPVOID>(address), NULL, MEM_RELEASE);
 }
 
 
 bool native::process::read_raw_memory(const void* buffer, const uintptr_t address, const SIZE_T size)
 {
 	return ReadProcessMemory(
-		this->handle.get_handle(),
+		this->handle.handle(),
 		reinterpret_cast<LPCVOID>(address),
 		const_cast<void*>(buffer),
 		size,
@@ -70,7 +65,7 @@ bool native::process::read_raw_memory(const void* buffer, const uintptr_t addres
 bool native::process::write_raw_memory(const void* buffer, const SIZE_T size, const uintptr_t address)
 {
 	return WriteProcessMemory(
-		this->handle.get_handle(),
+		this->handle.handle(),
 		reinterpret_cast<LPVOID>(address),
 		buffer,
 		size,
@@ -80,7 +75,7 @@ bool native::process::write_raw_memory(const void* buffer, const SIZE_T size, co
 bool native::process::virtual_protect(const uintptr_t address, uint32_t protect, uint32_t* old_protect)
 {
 	return VirtualProtectEx(
-		this->handle.get_handle(),
+		this->handle.handle(),
 		reinterpret_cast<LPVOID>(address),
 		0x1000,
 		protect,
@@ -93,8 +88,8 @@ uintptr_t native::process::map(memory_section& section)
 	SIZE_T view_size = section.size;
 
 	auto result = ntdll::NtMapViewOfSection(
-		section.handle.get_handle(),
-		this->handle.get_handle(),
+		section.handle.handle(),
+		this->handle.handle(),
 		&base_address,
 		NULL, NULL, NULL,
 		&view_size,
@@ -125,11 +120,11 @@ HWND native::process::get_main_window()
 
 		logger::log_formatted("Handle", handle, false);
 
-		DWORD process_id = 0;
-		if (!GetWindowThreadProcessId(handle, &process_id) || process_id != data->first)
+		std::int32_t process_id = 0;
+		if (!GetWindowThreadProcessId(handle, reinterpret_cast<DWORD*>(&process_id)) || process_id != data->first)
 			return TRUE; // CONTINUE
 
-		SetLastError(-1);
+		SetLastError(static_cast<DWORD>(-1));
 		data->second = handle;
 		return FALSE;
 	}, reinterpret_cast<LPARAM>(&window_data));
@@ -142,7 +137,7 @@ HWND native::process::get_main_window()
 
 std::int32_t native::process::get_id()
 {
-	return GetProcessId(this->handle.get_handle());
+	return GetProcessId(this->handle.handle());
 }
 
 std::unordered_map<std::string, uintptr_t> native::process::get_modules()
@@ -152,7 +147,7 @@ std::unordered_map<std::string, uintptr_t> native::process::get_modules()
 	HMODULE module_handles[1024];
 	DWORD size_needed;
 
-	if (!EnumProcessModules(this->handle.get_handle(), module_handles, sizeof(module_handles), &size_needed))
+	if (!EnumProcessModules(this->handle.handle(), module_handles, sizeof(module_handles), &size_needed))
 		return result;
 
 	for (auto module_index = 0; module_index < size_needed / sizeof(HMODULE); module_index++)
@@ -162,13 +157,13 @@ std::unordered_map<std::string, uintptr_t> native::process::get_modules()
 
 		// GET MODULE NAME
 		GetModuleBaseNameA(
-			this->handle.get_handle(),
+			this->handle.handle(),
 			module_handles[module_index],
 			const_cast<char*>(module_name.c_str()),
-			module_name.size());
+			static_cast<DWORD>(module_name.size()));
 
 		// MAKE CHARACTERS LOWERCASE
-		transformer::to_lower(module_name);
+		transformer::string_to_lower(module_name);
 
 		// TRUNCATE SIZE TO NULL TERMINATOR
 		transformer::truncate(module_name);
@@ -183,7 +178,7 @@ std::unordered_map<std::string, uintptr_t> native::process::get_modules()
 std::string native::process::get_name()
 {
 	char buffer[MAX_PATH];
-	GetModuleBaseNameA(handle.get_handle(), nullptr, buffer, MAX_PATH);
+	GetModuleBaseNameA(handle.handle(), nullptr, buffer, MAX_PATH);
 
 	return std::string(buffer);
 }
@@ -280,7 +275,7 @@ uintptr_t native::process::get_module_export(uintptr_t module_handle, const char
 			function_name = forward.substr(forward.find(".") + 1, function_name.npos);
 
 			// LOWERCASE THANKS
-			transformer::to_lower(library_name);
+			transformer::string_to_lower(library_name);
 
 			// FIND FORWARDED MODULE
 			auto modules = this->get_modules();
@@ -304,5 +299,5 @@ uintptr_t native::process::get_module_export(uintptr_t module_handle, const char
 
 HANDLE native::process::create_thread(const uintptr_t address, const uintptr_t argument)
 {
-	return CreateRemoteThread(this->handle.get_handle(), nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(address), reinterpret_cast<LPVOID>(argument), 0, nullptr);
+	return CreateRemoteThread(this->handle.handle(), nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(address), reinterpret_cast<LPVOID>(argument), 0, nullptr);
 }

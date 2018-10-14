@@ -1,4 +1,5 @@
 #include "api_set.hpp"
+#include "transformer.hpp"
 
 #include <algorithm>
 #include <winternl.h>
@@ -14,9 +15,11 @@ api_set::api_set()
 	{
 		auto descriptor = api_set->entry(entry_index);
 
-		wchar_t dll_name[MAX_PATH] = { 0 };
-		api_set->read_name(descriptor, dll_name);
-		std::transform(dll_name, dll_name + MAX_PATH, dll_name, ::tolower);
+		std::wstring dll_name(MAX_PATH, L'\00');
+		api_set->read_name(descriptor, dll_name.data());
+		
+		transformer::string_to_lower(dll_name, static_cast<std::size_t>(MAX_PATH));
+		//std::transform(dll_name, dll_name_end, dll_name, ::tolower);
 
 		auto host_data = api_set->get_host(descriptor);
 
@@ -30,7 +33,7 @@ api_set::api_set()
 
 			if (!host_name.empty())
 			{
-				//wprintf(L"%s - %s\n", dll_name, host_name.c_str());
+				//wprintf(L"%s - %s\n", dll_name.c_str(), host_name.c_str());
 				hosts.push_back(host_name);
 			}
 		}

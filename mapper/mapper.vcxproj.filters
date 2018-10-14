@@ -40,21 +40,18 @@
     <Filter Include="Shellcodes">
       <UniqueIdentifier>{352ecd43-9a8e-4ec4-9998-d2ae56da30c6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Engines">
+      <UniqueIdentifier>{610f320f-6071-421f-886b-1b5eec5d6fbc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engines">
+      <UniqueIdentifier>{74235fac-b308-4444-bef4-05013be59c0a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="loadlibrary.hpp">
       <Filter>Header Files\Injection</Filter>
     </ClInclude>
-    <ClInclude Include="binary_file.hpp">
-      <Filter>Header Files\Helpers</Filter>
-    </ClInclude>
-    <ClInclude Include="memory_section.hpp">
-      <Filter>Header Files\Helpers</Filter>
-    </ClInclude>
     <ClInclude Include="ntdll.hpp">
-      <Filter>Header Files\Helpers</Filter>
-    </ClInclude>
-    <ClInclude Include="safe_handle.hpp">
       <Filter>Header Files\Helpers</Filter>
     </ClInclude>
     <ClInclude Include="logger.hpp">
@@ -65,9 +62,6 @@
     </ClInclude>
     <ClInclude Include="portable_executable.hpp">
       <Filter>Header Files\Wrapper</Filter>
-    </ClInclude>
-    <ClInclude Include="api_set.hpp">
-      <Filter>Header Files\Helpers</Filter>
     </ClInclude>
     <ClInclude Include="cast.hpp">
       <Filter>Header Files\Helpers</Filter>
@@ -81,8 +75,32 @@
     <ClInclude Include="manualmapper.hpp">
       <Filter>Header Files\Injection</Filter>
     </ClInclude>
+    <ClInclude Include="compiler.hpp">
+      <Filter>Header Files\Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="safe_memory.hpp">
+      <Filter>Header Files\Interop</Filter>
+    </ClInclude>
+    <ClInclude Include="safe_handle.hpp">
+      <Filter>Header Files\Interop</Filter>
+    </ClInclude>
+    <ClInclude Include="binary_file.hpp">
+      <Filter>Header Files\Wrapper</Filter>
+    </ClInclude>
+    <ClInclude Include="api_set.hpp">
+      <Filter>Header Files\Wrapper</Filter>
+    </ClInclude>
+    <ClInclude Include="memory_section.hpp">
+      <Filter>Header Files\Interop</Filter>
+    </ClInclude>
     <ClInclude Include="executor.hpp">
-      <Filter>Header Files\Injection</Filter>
+      <Filter>Header Files\Engines</Filter>
+    </ClInclude>
+    <ClInclude Include="shellcode.hpp">
+      <Filter>Header Files\Engines</Filter>
+    </ClInclude>
+    <ClInclude Include="maker.hpp">
+      <Filter>Header Files\Helpers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -91,15 +109,6 @@
     </ClCompile>
     <ClCompile Include="loadlibrary.cpp">
       <Filter>Source Files\Injection</Filter>
-    </ClCompile>
-    <ClCompile Include="binary_file.cpp">
-      <Filter>Source Files\Helpers</Filter>
-    </ClCompile>
-    <ClCompile Include="memory_section.cpp">
-      <Filter>Source Files\Helpers</Filter>
-    </ClCompile>
-    <ClCompile Include="safe_handle.cpp">
-      <Filter>Source Files\Helpers</Filter>
     </ClCompile>
     <ClCompile Include="ntdll.cpp">
       <Filter>Source Files\Helpers</Filter>
@@ -110,17 +119,29 @@
     <ClCompile Include="portable_executable.cpp">
       <Filter>Source Files\Wrapper</Filter>
     </ClCompile>
-    <ClCompile Include="api_set.cpp">
-      <Filter>Source Files\Helpers</Filter>
-    </ClCompile>
     <ClCompile Include="manualmapper.cpp">
-      <Filter>Source Files\Injection</Filter>
-    </ClCompile>
-    <ClCompile Include="executor.cpp">
       <Filter>Source Files\Injection</Filter>
     </ClCompile>
     <ClCompile Include="map_context.cpp">
       <Filter>Source Files\Injection</Filter>
+    </ClCompile>
+    <ClCompile Include="memory_section.cpp">
+      <Filter>Source Files\Interop</Filter>
+    </ClCompile>
+    <ClCompile Include="binary_file.cpp">
+      <Filter>Source Files\Wrapper</Filter>
+    </ClCompile>
+    <ClCompile Include="api_set.cpp">
+      <Filter>Source Files\Wrapper</Filter>
+    </ClCompile>
+    <ClCompile Include="logger.cpp">
+      <Filter>Source Files\Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="executor.cpp">
+      <Filter>Source Files\Engines</Filter>
+    </ClCompile>
+    <ClCompile Include="shellcode.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

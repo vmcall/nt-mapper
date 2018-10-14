@@ -1,6 +1,7 @@
 #pragma once
 #include "memory_section.hpp"
 #include "safe_handle.hpp"
+
 #include <windows.h>
 #include <unordered_map>
 #include <string>
@@ -13,11 +14,14 @@ namespace native
 	public:
 		process(HANDLE handle) : handle(handle) {}
 		process(uint32_t id, DWORD desired_access) : handle(safe_handle(OpenProcess(desired_access, false, id))) { }
-		process() : handle() { }
+		process() { }
 
 		uintptr_t map(memory_section& section);
 
-		explicit operator bool();
+		explicit operator bool()
+		{
+			return static_cast<bool>(this->handle);
+		}
 
 		// STATICS
 		static process current_process();

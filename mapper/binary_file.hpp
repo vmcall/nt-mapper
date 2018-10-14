@@ -5,5 +5,9 @@
 class binary_file
 {
 public:
-	static std::vector<uint8_t> read_file(const std::string& file_path);
+	binary_file(std::string_view file_path);
+
+	std::vector<std::byte>& buffer();
+private:
+	std::vector<std::byte> m_buffer;
 };

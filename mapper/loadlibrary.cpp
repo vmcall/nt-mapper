@@ -36,7 +36,7 @@ bool injection::loadlibrary::inject(std::string& buffer)
 		}
 
 		// WAIT FOR THREAD TO FINISH
-		WaitForSingleObject(thread_handle.get_handle(), INFINITE);
+		WaitForSingleObject(thread_handle.handle(), INFINITE);
 	} while (false);
 	
 

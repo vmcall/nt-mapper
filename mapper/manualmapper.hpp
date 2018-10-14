@@ -19,7 +19,7 @@ namespace injection
 	{
 	public:
 		manualmapper(native::process& proc) : m_process(proc) { }
-		uintptr_t inject(const std::vector<uint8_t>& buffer, injection::executor::mode execution_mode);
+		uintptr_t inject(const std::vector<std::byte>& buffer, injection::executor::mode execution_mode);
 
 		using module_list = std::unordered_map<std::string, uintptr_t>;
 		module_list& linked_modules();

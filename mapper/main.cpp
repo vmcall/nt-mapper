@@ -11,17 +11,25 @@ int main()
 
 	// FIND PROCESS
 	const auto process_id = native::process::id_from_name("notepad.exe");
-	logger::log_formatted("Target process id", process_id);
+	logger::log_formatted("Target process id", process_id, false);
 	auto proc = native::process(process_id, PROCESS_ALL_ACCESS);
 
 	// READ BUFFER
-	const auto buffer = binary_file::read_file("D:\\Sync\\TestPEs\\DLLTEST_CONSOLE.dll");
-	const auto address = injection::manualmapper(proc).inject(buffer, injection::executor::mode::CREATE_THREAD);
+	binary_file image("D:\\Sync\\TestPEs\\DLLTEST64.dll");
 
+	// CREATE MAPPER INSTANCE
+	auto mapper = injection::manualmapper(proc);
+
+	// INJECT IMAGE INTO PROCESS
+	const auto address = mapper.inject(
+		image.buffer(), 
+		injection::executor::mode::CREATE_THREAD);
+
+	// PRINT INJECTED IMAGE ADDRESS
 	logger::log_formatted("Injected buffer", address, true);
 
 	std::cin.get();
 
-    return 0;
+	return 0;
 }
 

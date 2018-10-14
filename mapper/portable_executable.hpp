@@ -43,7 +43,8 @@ using export_list = std::unordered_map<std::string, std::vector<export_data>>;
 class portable_executable
 {
 public:
-	portable_executable(std::vector<uint8_t>& new_buffer);
+	portable_executable() {};
+	portable_executable(std::vector<std::byte>& new_buffer);
 
 	// INFORMATION
 	IMAGE_DOS_HEADER* get_dos_header();
@@ -53,7 +54,7 @@ public:
 	uintptr_t get_image_base();
 
 	// RESOURCES
-	std::vector<uint8_t>& get_buffer();
+	std::vector<std::byte>& get_buffer();
 	section_list& get_sections();
 	relocation_list get_relocations(uintptr_t image_base);
 	import_list get_imports(uintptr_t image_base);
@@ -65,6 +66,6 @@ private:
 	IMAGE_NT_HEADERS* nt_headers;
 	IMAGE_OPTIONAL_HEADER optional_header;
 	IMAGE_FILE_HEADER file_header;
-	std::vector<uint8_t> buffer;
+	std::vector<std::byte> buffer;
 	section_list sections;
 };

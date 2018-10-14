@@ -7,7 +7,7 @@
 #include <thread>
 #include <chrono>
 
-uintptr_t injection::manualmapper::inject(const std::vector<uint8_t>& buffer, injection::executor::mode execution_mode)
+uintptr_t injection::manualmapper::inject(const std::vector<std::byte>& buffer, injection::executor::mode execution_mode)
 {
 	// GET LINKED MODULES FOR LATER USE
 	this->linked_modules() = this->process().get_modules();
@@ -27,14 +27,14 @@ uintptr_t injection::manualmapper::inject(const std::vector<uint8_t>& buffer, in
 		return 0x00;
 
 	// RETURN ADDRESS OF THE MAPPED IMAGE 
-	return ctx.remote_image;
+	return ctx.remote_image();
 }
 
 bool injection::manualmapper::map_image(map_ctx& ctx)
 {
 	// CREATE A MEMORY SECTION THAT CAN BE MAPPED INTO SEPERATE PROCESSES
 	// AND REFLECT EACH OTHER, ALLOWING FOR EASY MEMORY ACCESS
-	auto section = memory_section(PAGE_EXECUTE_READWRITE, ctx.pe.get_optional_header().SizeOfImage);
+	auto section = memory_section(PAGE_EXECUTE_READWRITE, ctx.pe().get_optional_header().SizeOfImage);
 	if (!section)
 	{
 		logger::log_error("Failed to create section");
@@ -42,9 +42,9 @@ bool injection::manualmapper::map_image(map_ctx& ctx)
 	}
 
 	// MAP SECTION INTO BOTH LOCAL AND REMOTE PROCESS
-	ctx.local_image = native::process::current_process().map(section);
-	ctx.remote_image = this->process().map(section);
-	if (!ctx.local_image || !ctx.remote_image)
+	ctx.local_image() = native::process::current_process().map(section);
+	ctx.remote_image() = this->process().map(section);
+	if (!ctx.local_image() || !ctx.remote_image())
 	{
 		logger::log_error("Failed to map section");
 		return false;
@@ -63,6 +63,7 @@ bool injection::manualmapper::map_image(map_ctx& ctx)
 	// HANDLE STATIC TLS DATA
 	// HANDLE STATIC TLS CALLBACKS
 	// HANDLE C++ EXCEPTIONS
+	// INSERT LOADER ENTRIES (DOCUMENTED AND UNDOCUMENTED)
 
 	return true;
 }
@@ -70,10 +71,10 @@ bool injection::manualmapper::map_image(map_ctx& ctx)
 uintptr_t injection::manualmapper::find_or_map_dependency(const std::string& image_name)
 {
 	// HAVE WE MAPPED THIS DEPENDENCY ALREADY?
-	for (const auto& module : this->mapped_modules())
+	for (auto& module : this->mapped_modules())
 	{
-		if (module.image_name == image_name)
-			return module.remote_image;
+		if (module.image_name() == image_name)
+			return module.remote_image();
 	}
 		
 
@@ -82,33 +83,31 @@ uintptr_t injection::manualmapper::find_or_map_dependency(const std::string& ima
 		return iterator->second;
 
 	// TODO: PROPER FILE SEARCHING?
-	auto ctx = map_ctx(image_name, binary_file::read_file("C:\\Windows\\System32\\" + image_name));
+
+	binary_file file("C:\\Windows\\System32\\" + image_name);
+	auto ctx = map_ctx(image_name, file.buffer());
 
 	// MAP DEPENDENCY
-	if (map_image(ctx))
-		return ctx.remote_image;
-
-	// FAILED TO MAP DEPENDENCY
-	return 0x00;
+	return map_image(ctx) ? ctx.remote_image() : 0x00;
 }
 
 void injection::manualmapper::write_headers(map_ctx& ctx)
 {
 	// COPY OVER PE HEADERS TO MAPPED SECTION
 	std::memcpy(
-		ctx.local_image_void,							// DESTINATION
+		reinterpret_cast<void*>(ctx.local_image()),		// DESTINATION
 		ctx.pe_buffer(),								// SOURCE
-		ctx.pe.get_optional_header().SizeOfHeaders);	// SIZE
+		ctx.pe().get_optional_header().SizeOfHeaders);	// SIZE
 }
 void injection::manualmapper::write_image_sections(map_ctx& ctx)
 {
 	// COPY OVER EACH PE SECTION TO MAPPED SECTION
-	for (const auto& section : ctx.pe.get_sections())
+	for (const auto& section : ctx.pe().get_sections())
 	{
 		std::memcpy(
-			reinterpret_cast<void*>(ctx.local_image + section.VirtualAddress),	// DESTINATION
-			ctx.pe_buffer() + section.PointerToRawData,							// SOURCE
-			section.SizeOfRawData);												// SIZE
+			reinterpret_cast<void*>(ctx.local_image() + section.VirtualAddress),	// DESTINATION
+			ctx.pe_buffer() + section.PointerToRawData,								// SOURCE
+			section.SizeOfRawData);													// SIZE
 	}
 }
 
@@ -121,11 +120,11 @@ bool injection::manualmapper::call_entrypoint(map_ctx& ctx)
 void injection::manualmapper::relocate_image_by_delta(map_ctx& ctx)
 {
 	// CHANGE IN BASE ADDRESS (DEFAULT -> MAPPED)
-	const auto delta = ctx.remote_image - ctx.pe.get_image_base();
+	const auto delta = ctx.remote_image() - ctx.pe().get_image_base();
 
 	// UPDATE POINTERS WITH THE NEW IMAGE BASE DIFFERENCE
-	for (auto&[entry, item] : ctx.pe.get_relocations(ctx.local_image))
-		*cast::pointer(ctx.local_image + entry.page_rva + item.get_offset()) += delta;
+	for (auto&[entry, item] : ctx.pe().get_relocations(ctx.local_image()))
+		*cast::pointer(ctx.local_image() + entry.page_rva + item.get_offset()) += delta;
 }
 
 void injection::manualmapper::fix_import_table(map_ctx& ctx)
@@ -133,7 +132,7 @@ void injection::manualmapper::fix_import_table(map_ctx& ctx)
 	wstring_converter converter;
 	api_set api_schema;
 
-	for (const auto&[map_key, functions] : ctx.pe.get_imports(ctx.local_image))
+	for (const auto&[map_key, functions] : ctx.pe().get_imports(ctx.local_image()))
 	{
 		auto module_name = map_key; 
 
@@ -141,7 +140,7 @@ void injection::manualmapper::fix_import_table(map_ctx& ctx)
 		if (api_schema.query(wide_module_name))
 			module_name = converter.to_bytes(wide_module_name);
 
-		auto module_handle = find_or_map_dependency(module_name);
+		const auto module_handle = find_or_map_dependency(module_name);
 
 		if (!module_handle)
 		{
@@ -151,9 +150,9 @@ void injection::manualmapper::fix_import_table(map_ctx& ctx)
 
 		for (const auto& fn : functions)
 		{
-			*cast::pointer(ctx.local_image + fn.function_rva) = fn.ordinal > 0 ?
+			*cast::pointer(ctx.local_image() + fn.function_rva) = fn.ordinal > 0 ?
 				this->process().get_module_export(module_handle, reinterpret_cast<const char*>(fn.ordinal)) :	// IMPORT BY ORDINAL
-				this->process().get_module_export(module_handle, fn.name.c_str());								// IMPORT BY NAME
+				this->process().get_module_export(module_handle, fn.name .c_str());								// IMPORT BY NAME
 		}
 	}
 }

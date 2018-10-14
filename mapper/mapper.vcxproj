@@ -122,13 +122,14 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -144,13 +145,17 @@
     <ClInclude Include="executor.hpp" />
     <ClInclude Include="loadlibrary.hpp" />
     <ClInclude Include="logger.hpp" />
+    <ClInclude Include="maker.hpp" />
     <ClInclude Include="manualmapper.hpp" />
     <ClInclude Include="map_context.hpp" />
     <ClInclude Include="memory_section.hpp" />
     <ClInclude Include="ntdll.hpp" />
     <ClInclude Include="portable_executable.hpp" />
     <ClInclude Include="process.hpp" />
+    <ClInclude Include="compiler.hpp" />
     <ClInclude Include="safe_handle.hpp" />
+    <ClInclude Include="safe_memory.hpp" />
+    <ClInclude Include="shellcode.hpp" />
     <ClInclude Include="transformer.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -158,6 +163,7 @@
     <ClCompile Include="binary_file.cpp" />
     <ClCompile Include="executor.cpp" />
     <ClCompile Include="loadlibrary.cpp" />
+    <ClCompile Include="logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="manualmapper.cpp" />
     <ClCompile Include="map_context.cpp" />
@@ -165,7 +171,7 @@
     <ClCompile Include="ntdll.cpp" />
     <ClCompile Include="portable_executable.cpp" />
     <ClCompile Include="process.cpp" />
-    <ClCompile Include="safe_handle.cpp" />
+    <ClCompile Include="shellcode.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dllmain_call_x64.asm" />

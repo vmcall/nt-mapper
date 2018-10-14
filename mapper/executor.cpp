@@ -1,6 +1,9 @@
 #include "executor.hpp"
 #include "cast.hpp"
 #include "logger.hpp"
+#include "compiler.hpp"
+#include "safe_memory.hpp"
+#include "shellcode.hpp"
 
 injection::executor::mode& injection::executor::execution_mode()
 {
@@ -29,58 +32,52 @@ bool injection::executor::handle(map_ctx& ctx, native::process& process)
 
 bool injection::executor::handle_hijack(map_ctx& ctx, native::process& process)
 {
+	compiler::unreferenced_variable(process, ctx);
+
 	return false;
 }
 
 bool injection::executor::handle_create(map_ctx& ctx, native::process& process)
 {
-	// dllmain_call_x64.asm
-	constexpr uint8_t shellcode[] = {
-		0x48, 0x83, 0xEC, 0x28, 0x48, 0xB9,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x48, 0xC7, 0xC2, 0x01, 0x00, 0x00, 0x00,
-		0x4D, 0x31, 0xC0, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x28, 0xC3 };
+	// CREATE SHELLCODE FOR IMAGE
+	const auto entrypoint_offset = ctx.pe().get_optional_header().AddressOfEntryPoint;
+	auto shellcode = shellcode::call_dllmain(ctx.remote_image(), ctx.remote_image() + entrypoint_offset);
 
-	*cast::pointer(shellcode + 0x6) = ctx.remote_image;
-	*cast::pointer(shellcode + 0x1A) = ctx.remote_image + ctx.pe.get_optional_header().AddressOfEntryPoint;
+	// ALLOCATE AND INITIALISE MEMORY HANDLER (RAII)
+	auto remote_buffer = safe_memory(
+		&process,
+		process.raw_allocate(shellcode.size()));
 
-	auto remote_buffer = process.raw_allocate(sizeof(shellcode));
+	// FAILED TO ALLOCATE?
 	if (!remote_buffer)
 	{
 		logger::log_error("Failed to allocate shellcode");
 		return false;
 	}
 
-	auto success = true;
-	do
+	// FAILED TO WRITE?
+	if (!process.write_raw_memory(shellcode.data(), shellcode.size(), remote_buffer.memory()))
 	{
-		if (!process.write_raw_memory(shellcode, sizeof(shellcode), remote_buffer))
-		{
-			logger::log_error("Failed to write shellcode");
-			success = false;
-			break;
-		}
+		logger::log_error("Failed to write shellcode");
+		return false;
+	}
 
-		auto thread_handle = safe_handle(process.create_thread(remote_buffer, NULL));
-		if (!thread_handle)
-		{
-			logger::log_error("Failed to create shellcode thread");
-			success = false;
-			break;
-		}
+	// FAILED TO CREATE THREAD?
+	auto thread_handle = safe_handle(process.create_thread(remote_buffer.memory(), NULL));
+	if (!thread_handle)
+	{
+		logger::log_error("Failed to create shellcode thread");
+		return false;
+	}
 
-		if (WaitForSingleObject(thread_handle.get_handle(), INFINITE) == WAIT_FAILED)
-		{
-			logger::log_error("Failed to wait for shellcode thread");
-			success = false;
-		}
+	// FAILED TO WAIT FOR THREAD?
+	if (WaitForSingleObject(thread_handle.handle(), INFINITE) == WAIT_FAILED)
+	{
+		logger::log_error("Failed to wait for shellcode thread");
+		return false;
+	}
 
-	} while (false);
-
-
-	// FREE SHELLCODE
-	process.free_memory(remote_buffer);
-
-	return success;
+	// SUCCESSFULLY RAN SHELLCODE, MEMORY GET'S FREED BY HANDLER
+	// WHEN IT GOES OUT OF SCOPE
+	return true;
 }

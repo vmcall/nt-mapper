@@ -1,20 +1,29 @@
 #include "binary_file.hpp"
+
 #include <vector>
 #include <fstream>
-#include <iterator>
 
-std::vector<uint8_t> binary_file::read_file(const std::string& file_path)
+binary_file::binary_file(std::string_view file_path)
 {
-	std::ifstream stream(file_path, std::ios::binary);
+	// CREATE FILE STREAM TO SPECIFIED PATH
+	std::ifstream stream(file_path.data(), std::ios::binary);
 
+	// SKIP WHITESPACES
 	stream.unsetf(std::ios::skipws);
 
-	auto buffer = std::vector<uint8_t>();
-	stream.seekg(0, std::ios::end);
-	buffer.reserve(stream.tellg());
-	stream.seekg(0, std::ios::beg);
+	// FIND LENGTH
+	stream.seekg(0, std::ios::end);			// GO TO END OF STREAM
+	const auto length = stream.tellg();		// STORE STREAM POSITION
+	stream.seekg(0, std::ios::beg);			// GO TO BEGINNING OF STREAM
 
-	std::copy(std::istream_iterator<uint8_t>{stream}, {}, std::back_inserter(buffer));
+	// CREATE BUFFER
+	this->buffer() = std::vector<std::byte>(length);
 
-	return buffer;
+	// COPY BUFFER FROM STREAM TO VECTOR
+	stream.read(reinterpret_cast<char*>(this->buffer().data()), length);
+}
+
+std::vector<std::byte>& binary_file::buffer()
+{
+	return this->m_buffer;
 }
