@@ -1,4 +1,5 @@
 #include "thread.hpp"
+#include "ntdll.hpp"
 
 bool native::thread::wait(const std::uint32_t max_time)
 {
@@ -7,7 +8,6 @@ bool native::thread::wait(const std::uint32_t max_time)
 
 bool native::thread::resume()
 {
-
 	// UPDATE CONTEXT
 	if (!this->set_context())
 		return false;
@@ -28,12 +28,34 @@ bool native::thread::suspend()
 	return result;
 }
 
-std::uint32_t native::thread::state()
+bool native::thread::fetch()
 {
-	//auto result = GetThreadInformation(this->handle().unsafe_handle(), )
 
-	
-	return 0x00;
+	ntdll::enumerate_threads([this](SYSTEM_THREAD_INFORMATION*) {
+		if ()
+	});
+
+	return false;
+}
+
+std::uint32_t& native::thread::state()
+{
+	return this->m_state;
+}
+
+std::uint32_t& native::thread::wait_reason()
+{
+	return this->m_wait_reason;
+}
+
+std::uintptr_t& native::thread::start_address()
+{
+	return this->m_start_address;
+}
+
+std::uint32_t& native::thread::thread_id()
+{
+	return this->m_thread_id;
 }
 
 CONTEXT& native::thread::context()

@@ -17,7 +17,7 @@ native::process native::process::current_process()
 uint32_t native::process::id_from_name(std::string_view process_name)
 {
 	DWORD process_list[516], bytes_needed;
-	if (EnumProcesses(process_list, sizeof(process_list), &bytes_needed))
+	if (K32EnumProcesses(process_list, sizeof(process_list), &bytes_needed))
 	{
 		for (size_t index = 0; index < bytes_needed / sizeof(uint32_t); index++)
 		{
@@ -28,6 +28,7 @@ uint32_t native::process::id_from_name(std::string_view process_name)
 		}
 	}
 
+	logger::log_error("Process not found");
 	return 0x00;
 }
 
@@ -75,10 +76,12 @@ bool native::process::write_raw_memory(const void* buffer, const SIZE_T size, co
 
 bool native::process::virtual_protect(const uintptr_t address, uint32_t protect, uint32_t* old_protect)
 {
+	constexpr auto page_size = 0x1000;
+
 	return VirtualProtectEx(
 		this->handle().unsafe_handle(),
 		reinterpret_cast<LPVOID>(address),
-		0x1000,
+		page_size,
 		protect,
 		reinterpret_cast<PDWORD>(old_protect));
 }
@@ -315,66 +318,24 @@ std::vector<native::thread> native::process::threads()
 {
 	std::vector<native::thread> thread_list{};
 
-	auto allocation = std::make_unique<std::byte[]>(0x1);
-	auto info = reinterpret_cast<SYSTEM_PROCESS_INFORMATION*>(allocation.get());
-
-	constexpr auto size_mismatch = 0xC0000004;
-
-	const auto type = SystemProcessInformation;
-
-	// QUERY SIZE
-	std::uint32_t size_needed;
-	if (ntdll::NtQuerySystemInformation(type, info, 0x1, reinterpret_cast<DWORD*>(&size_needed)) == size_mismatch)
-	{
-		allocation = std::make_unique<std::byte[]>(size_needed);
-		info = reinterpret_cast<SYSTEM_PROCESS_INFORMATION*>(allocation.get());
-	}
-
-	// QUERY AGAIN
-	if (ntdll::NtQuerySystemInformation(type, info, size_needed, reinterpret_cast<DWORD*>(&size_needed)) != 0x00)
-	{
-		logger::log_error("NtQuerySystemInformation failed");
-		return thread_list;
-	}
-
-
-	// FUCK MICROSOFT FOR USING OFFSETS INSTEAD OF A LINKED LIST!
-
-	// FIND THIS PROCESS
 	const auto current_pid = this->get_id();
-	for (
-		auto info_casted = reinterpret_cast<std::uintptr_t>(info); 
-		info->NextEntryOffset;
-		info = reinterpret_cast<SYSTEM_PROCESS_INFORMATION*>(info_casted + info->NextEntryOffset), 
-		info_casted = reinterpret_cast<std::uintptr_t>(info))
-	{
-		if (cast::pointer_convert<std::uint32_t>(info->UniqueProcessId) != current_pid)
-			continue;
 
-		// ITERATE THREADS OF THIS PROCESS
-		
-		auto thread_info = reinterpret_cast<SYSTEM_THREAD_INFORMATION*>(info_casted + sizeof(SYSTEM_PROCESS_INFORMATION));
-		
-		for (std::uint32_t thread_index = 0; thread_index < info->NumberOfThreads; ++thread_index)
+	ntdll::enumerate_threads([=, &thread_list](SYSTEM_THREAD_INFORMATION* info) {
+		if (cast::pointer_convert<std::uint32_t>(info->ClientId.UniqueProcess) != current_pid)
+			return;
+
+		const auto this_thread = info->ClientId.UniqueThread;
+		auto handle = OpenThread(THREAD_ALL_ACCESS, false, cast::pointer_convert<std::uint32_t>(this_thread));
+
+		if (handle == INVALID_HANDLE_VALUE)
 		{
-			auto this_thread = thread_info[thread_index].ClientId.UniqueThread;
-			auto handle = OpenThread(THREAD_ALL_ACCESS, false, cast::pointer_convert<std::uint32_t>(this_thread));
-
-			if (handle == INVALID_HANDLE_VALUE)
-			{
-				logger::log_error("Failed to open handle to thread.");
-				logger::log_formatted("Thread Id", this_thread, true);
-				continue;
-			}
-
-			thread_list.emplace_back(handle);
+			logger::log_error("Failed to open handle to thread.");
+			logger::log_formatted("Thread Id", this_thread, true);
+			return;
 		}
 
-
-		// STOP ITERATING AS WE FOUND OUR PROCESS
-		break;
-	}
-
+		thread_list.emplace_back(handle, info);
+	});
 
 	// USING SNAPSHOT :)
 	//auto snapshot_handle = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0x00);
