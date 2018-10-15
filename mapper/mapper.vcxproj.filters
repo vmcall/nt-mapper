@@ -143,11 +143,11 @@
     <ClCompile Include="executor.cpp">
       <Filter>Source Files\Engines</Filter>
     </ClCompile>
-    <ClCompile Include="shellcode.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="thread.cpp">
       <Filter>Source Files\Interop</Filter>
+    </ClCompile>
+    <ClCompile Include="shellcode.cpp">
+      <Filter>Source Files\Engines</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

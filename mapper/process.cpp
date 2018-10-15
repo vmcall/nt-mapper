@@ -1,16 +1,20 @@
-#include "process.hpp"
-#include "ntdll.hpp"
-#include "logger.hpp"
 #include "transformer.hpp"
-#include <Psapi.h>
+#include "process.hpp"
+#include "logger.hpp"
+#include "ntdll.hpp"
+#include "cast.hpp"
+
 #include <algorithm>
+#include <tlhelp32.h>
+#include <Psapi.h>
+#include <array>
 
 native::process native::process::current_process()
 {
 	return process(reinterpret_cast<HANDLE>(-1));
 }
 
-uint32_t native::process::id_from_name(const std::string& process_name)
+uint32_t native::process::id_from_name(std::string_view process_name)
 {
 	DWORD process_list[516], bytes_needed;
 	if (EnumProcesses(process_list, sizeof(process_list), &bytes_needed))
@@ -19,15 +23,12 @@ uint32_t native::process::id_from_name(const std::string& process_name)
 		{
 			auto proc = process(process_list[index], PROCESS_ALL_ACCESS);
 
-			if (!proc)
-				continue;
-
-			if (process_name == proc.get_name())
+			if (proc && process_name == proc.get_name())
 				return process_list[index];
 		}
 	}
 
-	return 0;
+	return 0x00;
 }
 
 MEMORY_BASIC_INFORMATION native::process::virtual_query(const uintptr_t address)
@@ -108,8 +109,8 @@ uintptr_t native::process::map(memory_section& section)
 HWND native::process::get_main_window()
 {
 	// SETUP CONTAINER
-	using window_data_t = std::pair<std::int32_t, HWND>;
-	window_data_t window_data = window_data_t{ this->get_id(), 0 };
+	using window_data_t = std::pair<std::uint32_t, HWND>;
+	window_data_t window_data = window_data_t{ this->get_id(), 0x00 };
 
 	logger::log_formatted("Process id", window_data.first, false);
 
@@ -120,7 +121,7 @@ HWND native::process::get_main_window()
 
 		logger::log_formatted("Handle", handle, false);
 
-		std::int32_t process_id = 0;
+		std::uint32_t process_id = 0;
 		if (!GetWindowThreadProcessId(handle, reinterpret_cast<DWORD*>(&process_id)) || process_id != data->first)
 			return TRUE; // CONTINUE
 
@@ -135,30 +136,35 @@ HWND native::process::get_main_window()
 	return window_data.second;
 }
 
-std::int32_t native::process::get_id()
+std::uint32_t native::process::get_id()
 {
 	return GetProcessId(this->handle().unsafe_handle());
 }
 
 std::unordered_map<std::string, uintptr_t> native::process::get_modules()
 {
-	auto result = std::unordered_map<std::string, uintptr_t>();
+	std::unordered_map<std::string, uintptr_t> result{};
+	std::array<HMODULE, 200> modules{};
 
-	HMODULE module_handles[1024];
-	DWORD size_needed;
-
-	if (!EnumProcessModules(this->handle().unsafe_handle(), module_handles, sizeof(module_handles), &size_needed))
+	std::uint32_t size_needed;
+	if (!EnumProcessModules(
+		this->handle().unsafe_handle(),
+		modules.data(), 
+		static_cast<DWORD>(modules.size()),
+		reinterpret_cast<DWORD*>(&size_needed)))
+	{
 		return result;
+	}
 
 	for (auto module_index = 0; module_index < size_needed / sizeof(HMODULE); module_index++)
 	{
 		// INITIALISE STRING OF SIZE MAX_PATH (260)
-		std::string module_name(MAX_PATH, '0');
+		std::string module_name(MAX_PATH, '\00');
 
 		// GET MODULE NAME
 		GetModuleBaseNameA(
 			this->handle().unsafe_handle(),
-			module_handles[module_index],
+			modules.at(module_index),
 			const_cast<char*>(module_name.c_str()),
 			static_cast<DWORD>(module_name.size()));
 
@@ -169,7 +175,7 @@ std::unordered_map<std::string, uintptr_t> native::process::get_modules()
 		transformer::truncate(module_name);
 
 		// SET ENTRY
-		result[module_name] = reinterpret_cast<uintptr_t>(module_handles[module_index]);
+		result[module_name] = reinterpret_cast<uintptr_t>(modules.at(module_index));
 	}
 
 	return result;
@@ -303,6 +309,113 @@ native::thread native::process::create_thread(const uintptr_t address, const uin
 		0x00, nullptr);
 
 	return native::thread(thread_handle);
+}
+
+std::vector<native::thread> native::process::threads()
+{
+	std::vector<native::thread> thread_list{};
+
+	auto allocation = std::make_unique<std::byte[]>(0x1);
+	auto info = reinterpret_cast<SYSTEM_PROCESS_INFORMATION*>(allocation.get());
+
+	constexpr auto size_mismatch = 0xC0000004;
+
+	const auto type = SystemProcessInformation;
+
+	// QUERY SIZE
+	std::uint32_t size_needed;
+	if (ntdll::NtQuerySystemInformation(type, info, 0x1, reinterpret_cast<DWORD*>(&size_needed)) == size_mismatch)
+	{
+		allocation = std::make_unique<std::byte[]>(size_needed);
+		info = reinterpret_cast<SYSTEM_PROCESS_INFORMATION*>(allocation.get());
+	}
+
+	// QUERY AGAIN
+	if (ntdll::NtQuerySystemInformation(type, info, size_needed, reinterpret_cast<DWORD*>(&size_needed)) != 0x00)
+	{
+		logger::log_error("NtQuerySystemInformation failed");
+		return thread_list;
+	}
+
+
+	// FUCK MICROSOFT FOR USING OFFSETS INSTEAD OF A LINKED LIST!
+
+	// FIND THIS PROCESS
+	const auto current_pid = this->get_id();
+	for (
+		auto info_casted = reinterpret_cast<std::uintptr_t>(info); 
+		info->NextEntryOffset;
+		info = reinterpret_cast<SYSTEM_PROCESS_INFORMATION*>(info_casted + info->NextEntryOffset), 
+		info_casted = reinterpret_cast<std::uintptr_t>(info))
+	{
+		if (cast::pointer_convert<std::uint32_t>(info->UniqueProcessId) != current_pid)
+			continue;
+
+		// ITERATE THREADS OF THIS PROCESS
+		
+		auto thread_info = reinterpret_cast<SYSTEM_THREAD_INFORMATION*>(info_casted + sizeof(SYSTEM_PROCESS_INFORMATION));
+		
+		for (std::uint32_t thread_index = 0; thread_index < info->NumberOfThreads; ++thread_index)
+		{
+			auto this_thread = thread_info[thread_index].ClientId.UniqueThread;
+			auto handle = OpenThread(THREAD_ALL_ACCESS, false, cast::pointer_convert<std::uint32_t>(this_thread));
+
+			if (handle == INVALID_HANDLE_VALUE)
+			{
+				logger::log_error("Failed to open handle to thread.");
+				logger::log_formatted("Thread Id", this_thread, true);
+				continue;
+			}
+
+			thread_list.emplace_back(handle);
+		}
+
+
+		// STOP ITERATING AS WE FOUND OUR PROCESS
+		break;
+	}
+
+
+	// USING SNAPSHOT :)
+	//auto snapshot_handle = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0x00);
+	//
+	//if (snapshot_handle == INVALID_HANDLE_VALUE)
+	//{
+	//	logger::log_error("Failed to create snapshot for threads");
+	//	return thread_list;
+	//}
+	//
+	//THREADENTRY32 thread_entry{};
+	//thread_entry.dwSize = sizeof(thread_entry);
+	//
+	//if (!Thread32First(snapshot_handle, &thread_entry))
+	//{
+	//	logger::log_error("Failed to enumerate threads");
+	//	return thread_list;
+	//}
+	//
+	//const auto current_pid = this->get_id();
+	//
+	//do 
+	//{
+	//	const auto owner_pid = thread_entry.th32OwnerProcessID;
+	//	if (owner_pid == current_pid)
+	//	{
+	//		auto handle = OpenThread(THREAD_ALL_ACCESS, false, thread_entry.th32ThreadID);
+	//
+	//		if (handle == INVALID_HANDLE_VALUE)
+	//		{
+	//			logger::log_error("Failed to open handle to thread.");
+	//			logger::log_formatted("Thread Id", thread_entry.th32ThreadID, true);
+	//			continue;
+	//		}
+	//
+	//		thread_list.emplace_back(handle);
+	//	}
+	//
+	//} while (Thread32Next(snapshot_handle, &thread_entry));
+
+	return thread_list;
 }
 
 safe_handle& native::process::handle()

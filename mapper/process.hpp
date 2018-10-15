@@ -12,11 +12,14 @@ namespace native
 	class process
 	{
 	public:
-		process(HANDLE handle) : m_handle(handle) {}
-		process(uint32_t id, DWORD desired_access) : m_handle(safe_handle(OpenProcess(desired_access, false, id))) { }
 		process() { }
-
-		uintptr_t map(memory_section& section);
+		process(HANDLE handle) : m_handle(handle) {}
+		process(uint32_t id, std::uint32_t desired_access) : m_handle(safe_handle(OpenProcess(desired_access, false, id))) { }
+		process(std::string_view process_name, std::uint32_t desired_access)
+		{
+			const auto process_id = native::process::id_from_name(process_name);
+			this->handle() = safe_handle(OpenProcess(desired_access, false, process_id));
+		}
 
 		explicit operator bool()
 		{
@@ -25,9 +28,10 @@ namespace native
 
 		// STATICS
 		static process current_process();
-		static uint32_t id_from_name(const std::string& process_name);
+		static uint32_t id_from_name(std::string_view process_name);
 
 		// MEMORY
+		uintptr_t map(memory_section& section);
 		MEMORY_BASIC_INFORMATION virtual_query(const uintptr_t address);
 		uintptr_t raw_allocate(const SIZE_T virtual_size, const uintptr_t address = 0);
 		bool free_memory(const uintptr_t address);
@@ -68,7 +72,7 @@ namespace native
 
 		// INFORMATION
 		HWND get_main_window();
-		std::int32_t get_id();
+		std::uint32_t get_id();
 		std::unordered_map<std::string, uintptr_t> get_modules();
 		std::string get_name();
 
@@ -92,6 +96,8 @@ namespace native
 
 		// THREAD
 		native::thread create_thread(const uintptr_t address, const uintptr_t argument = 0);
+
+		std::vector<native::thread> threads();
 
 
 		safe_handle& handle();

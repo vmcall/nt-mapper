@@ -10,9 +10,8 @@ int main()
 	ntdll::initialise();
 
 	// FIND PROCESS
-	const auto process_id = native::process::id_from_name("notepad.exe");
-	logger::log_formatted("Target process id", process_id, false);
-	auto proc = native::process(process_id, PROCESS_ALL_ACCESS);
+	auto proc = native::process("notepad.exe", PROCESS_ALL_ACCESS);
+	logger::log_formatted("Target process id", proc.get_id(), false);
 
 	// READ BUFFER
 	binary_file image("D:\\Sync\\TestPEs\\DLLTEST64.dll");
@@ -23,7 +22,7 @@ int main()
 	// INJECT IMAGE INTO PROCESS
 	const auto address = mapper.inject(
 		image.buffer(), 
-		injection::executor::mode::CREATE_THREAD);
+		injection::executor::mode::HIJACK_THREAD);
 
 	// PRINT INJECTED IMAGE ADDRESS
 	logger::log_formatted("Injected buffer", address, true);

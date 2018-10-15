@@ -34,7 +34,12 @@ bool injection::executor::handle_hijack(map_ctx& ctx, native::process& process)
 {
 	compiler::unreferenced_variable(process, ctx);
 
-	return false;
+	for (auto& thread : process.threads())
+	{
+		logger::log_formatted("Thread Handle", thread.handle().unsafe_handle(), true);
+	}
+
+	return true;
 }
 
 bool injection::executor::handle_create(map_ctx& ctx, native::process& process)
@@ -71,7 +76,7 @@ bool injection::executor::handle_create(map_ctx& ctx, native::process& process)
 	}
 
 	// FAILED TO WAIT FOR THREAD?
-	if (thread.wait(INFINITE) == WAIT_FAILED)
+	if (!thread.wait())
 	{
 		logger::log_error("Failed to wait for shellcode thread");
 		return false;

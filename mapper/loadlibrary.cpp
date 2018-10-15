@@ -38,7 +38,7 @@ bool injection::loadlibrary::inject(std::string_view buffer)
 	}
 
 	// FAILED TO WAIT FOR THREAD?
-	if (thread.wait(INFINITE) == WAIT_FAILED)
+	if (!thread.wait())
 	{
 		logger::log_error("Failed to wait for loadlibrary thread");
 		return false;

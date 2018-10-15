@@ -2,7 +2,8 @@
 #include <Windows.h>
 #include <winternl.h>
 
-typedef NTSTATUS(NTAPI* fnNtCreateSection)(
+
+using NtCreateSection_t = NTSTATUS(NTAPI*)(
 	PHANDLE sectionHandle,
 	ULONG                DesiredAccess,
 	POBJECT_ATTRIBUTES   ObjectAttributes OPTIONAL,
@@ -11,7 +12,8 @@ typedef NTSTATUS(NTAPI* fnNtCreateSection)(
 	ULONG                SectionAttributes,
 	HANDLE               FileHandle OPTIONAL);
 
-typedef NTSTATUS(NTAPI* fnNtMapViewOfSection)(HANDLE          SectionHandle,
+using NtMapViewOfSection_t = NTSTATUS(NTAPI*)(
+	HANDLE          SectionHandle,
 	HANDLE          ProcessHandle,
 	PVOID           *BaseAddress,
 	ULONG_PTR       ZeroBits,
@@ -22,9 +24,16 @@ typedef NTSTATUS(NTAPI* fnNtMapViewOfSection)(HANDLE          SectionHandle,
 	ULONG           AllocationType,
 	ULONG           Win32Protect);
 
+using NtQuerySystemInformation_t = NTSTATUS(NTAPI*)(
+	SYSTEM_INFORMATION_CLASS SystemInformationClass,
+	PVOID SystemInformation,
+	ULONG SystemInformationLength,
+	ULONG* ReturnLength);
+
 namespace ntdll
 {
 	void initialise();
-	extern fnNtCreateSection NtCreateSection;
-	extern fnNtMapViewOfSection NtMapViewOfSection;
+	extern NtCreateSection_t NtCreateSection;
+	extern NtMapViewOfSection_t NtMapViewOfSection;
+	extern NtQuerySystemInformation_t NtQuerySystemInformation;
 }

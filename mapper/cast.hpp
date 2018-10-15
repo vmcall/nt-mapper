@@ -13,4 +13,13 @@ namespace cast
 		// :)
 		return (uintptr_t*)(val);
 	}
+
+
+	// THIS IS SUPER UNDEFINED BEHAVIOUR BUT EYE-CANDY
+	// FOR CONVERTING VOID* TO INTEGERS THROUGH TRUNCATION
+	template <class T>
+	__forceinline T pointer_convert(void* val)
+	{
+		return static_cast<T>(reinterpret_cast<uintptr_t>(val));
+	}
 }
