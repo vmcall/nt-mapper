@@ -65,22 +65,22 @@ namespace native
 			std::uint32_t old_protect;
 			if (!this->virtual_protect(address, PAGE_EXECUTE_READWRITE, &old_protect))
 			{
-				logger::log_error("Failed to set PAGE_EXECUTE_READWRITE");
-				logger::log_formatted("Last error", GetLastError(), true);
+				//logger::log_error("Failed to set PAGE_EXECUTE_READWRITE");
+				//logger::log_formatted("Last error", GetLastError(), true);
 				//return false;
 			}
 			
 			if (!write_raw_memory(reinterpret_cast<unsigned char*>(const_cast<T*>(&buffer)), sizeof(T), address))
 			{
-				logger::log_error("Failed to write memory");
-				logger::log_formatted("Last error", GetLastError(), true);
+				//logger::log_error("Failed to write memory");
+				//logger::log_formatted("Last error", GetLastError(), true);
 				return false;
 			}
 			
 			if (!this->virtual_protect(old_protect, PAGE_EXECUTE_READWRITE, &old_protect))
 			{
-				logger::log_error("Failed to reset page protection");
-				logger::log_formatted("Last error", GetLastError(), true);
+				//logger::log_error("Failed to reset page protection");
+				//logger::log_formatted("Last error", GetLastError(), true);
 				//return false;
 			}
 

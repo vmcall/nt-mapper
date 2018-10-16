@@ -87,9 +87,6 @@ bool injection::executor::handle_hijack(map_ctx& ctx, native::process& process)
 		// ALIGN STACK TO DEFAULT 8-BYTE ALIGNMENT
 		thread.context().Rsp &= 0xFFFFFFFFFFFFFFF8;
 
-		logger::log_formatted("New Stack pointer", thread.context().Rsp, true);
-		logger::log_formatted("Instruction pointer", thread.context().Rip, true);
-
 		if (!process.write_memory(thread.context().Rip, thread.context().Rsp))
 		{
 			logger::log_error("Failed to write instruction pointer to stack.");
@@ -99,8 +96,9 @@ bool injection::executor::handle_hijack(map_ctx& ctx, native::process& process)
 		// SET NEW INSTRUCTION POINTER
 		thread.context().Rip = remote_buffer.memory();
 
+		logger::log_formatted("New Stack pointer", thread.context().Rsp, true);
+		logger::log_formatted("Instruction pointer", thread.context().Rip, true);
 		logger::log_formatted("Shellcode", remote_buffer.memory(), true);
-		logger::log_formatted("Remote image", ctx.remote_image(), true);
 		logger::log_formatted("Entrypoint", ctx.remote_image() + entrypoint_offset, true);
 
 		// RESUME THREAD TO RUN OUR SHELLCODE
@@ -110,11 +108,10 @@ bool injection::executor::handle_hijack(map_ctx& ctx, native::process& process)
 			return false;
 		}
 
-		// WAIT FOR THREAD TO BE FINISHED
+		// WAIT FOR THREAD TO FINISH
 		// ...
 		// AT THE END OF THE SHELLCODE, IT WRITES 0x1 TO SHELLCODE+6a TO ALERT EXECUTOR
 		// OF IT'S SUCCESS :)
-
 		const auto marker_address = remote_buffer.memory() + 0x6a;
 		for (std::uint8_t marker = 0x00; marker != 0x01; process.read_memory(&marker, marker_address))
 		{
