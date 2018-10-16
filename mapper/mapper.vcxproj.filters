@@ -154,5 +154,8 @@
     <None Include="dllmain_call_x64.asm">
       <Filter>Shellcodes</Filter>
     </None>
+    <None Include="dllmain_hijack_x64.asm">
+      <Filter>Shellcodes</Filter>
+    </None>
   </ItemGroup>
 </Project>

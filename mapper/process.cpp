@@ -320,9 +320,10 @@ std::vector<native::thread> native::process::threads()
 
 	const auto current_pid = this->get_id();
 
-	ntdll::enumerate_threads([=, &thread_list](SYSTEM_THREAD_INFORMATION* info) {
+	ntdll::enumerate_threads([=, &thread_list](SYSTEM_THREAD_INFORMATION* info) 
+	{
 		if (cast::pointer_convert<std::uint32_t>(info->ClientId.UniqueProcess) != current_pid)
-			return;
+			return false;
 
 		const auto this_thread = info->ClientId.UniqueThread;
 		auto handle = OpenThread(THREAD_ALL_ACCESS, false, cast::pointer_convert<std::uint32_t>(this_thread));
@@ -331,10 +332,11 @@ std::vector<native::thread> native::process::threads()
 		{
 			logger::log_error("Failed to open handle to thread.");
 			logger::log_formatted("Thread Id", this_thread, true);
-			return;
+			return false;
 		}
 
-		thread_list.emplace_back(handle, info);
+		thread_list.emplace_back(handle, *info);
+		return false;
 	});
 
 	// USING SNAPSHOT :)

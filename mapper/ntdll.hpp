@@ -1,4 +1,6 @@
 #pragma once
+#include "logger.hpp"
+
 #include <Windows.h>
 #include <winternl.h>
 #include <memory>
@@ -82,16 +84,15 @@ namespace ntdll
 	__forceinline void enumerate_threads(Fn callback)
 	{
 		ntdll::enumerate_processes([=](SYSTEM_PROCESS_INFORMATION* info) {
-			// ITERATE THREADS OF THIS PROCESS
 			const auto info_casted = reinterpret_cast<uintptr_t>(info);
 			const auto thread_info = reinterpret_cast<SYSTEM_THREAD_INFORMATION*>(info_casted + sizeof(SYSTEM_PROCESS_INFORMATION));
 			for (std::uint32_t thread_index = 0; thread_index < info->NumberOfThreads; ++thread_index)
 			{
-				callback(&thread_info[thread_index]);
+				if (callback(&thread_info[thread_index]))
+					return true;
 			}
 
-			// STOP ITERATING AS WE FOUND OUR PROCESS
-			return true;
+			return false;
 		});
 	}
 }

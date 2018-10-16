@@ -177,6 +177,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="dllmain_call_x64.asm" />
+    <None Include="dllmain_hijack_x64.asm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -19,31 +19,42 @@ bool native::thread::resume()
 bool native::thread::suspend()
 {
 	// SUSPEND THREAD
-	const auto result = SuspendThread(this->handle().unsafe_handle()) != static_cast<DWORD>(0xFFFFFFFF);;
+	if (SuspendThread(this->handle().unsafe_handle()) == static_cast<DWORD>(0xFFFFFFFF))
+		return false;
 
 	// GET CONTEXT
 	if (!this->get_context())
 		return false;
 
-	return result;
+	return true;
 }
 
 bool native::thread::fetch()
 {
+	ntdll::enumerate_threads([this](SYSTEM_THREAD_INFORMATION* thread_info) {
 
-	ntdll::enumerate_threads([this](SYSTEM_THREAD_INFORMATION*) {
-		if ()
+		const auto this_thread_id = cast::pointer_convert<std::uint32_t>(thread_info->ClientId.UniqueThread);
+
+		if (this_thread_id != this->thread_id())
+			return false;
+
+		// FETCH
+		this->state() = static_cast<native::thread::state_t>(thread_info->ThreadState);
+		this->wait_reason() = static_cast<native::thread::wait_reason_t>(thread_info->WaitReason);
+		this->start_address() = reinterpret_cast<uintptr_t>(thread_info->StartAddress);
+
+		return true;
 	});
 
 	return false;
 }
 
-std::uint32_t& native::thread::state()
+native::thread::state_t& native::thread::state()
 {
 	return this->m_state;
 }
 
-std::uint32_t& native::thread::wait_reason()
+native::thread::wait_reason_t& native::thread::wait_reason()
 {
 	return this->m_wait_reason;
 }
@@ -65,12 +76,16 @@ CONTEXT& native::thread::context()
 
 bool native::thread::get_context()
 {
-	return static_cast<bool>(GetThreadContext(this->handle().unsafe_handle(), &this->context()));
+	// SPECIFY ALL REGISTERS
+	this->m_context = CONTEXT();
+	this->m_context.ContextFlags = CONTEXT_FULL;
+
+	return static_cast<bool>(GetThreadContext(this->handle().unsafe_handle(), &this->m_context));
 }
 
 bool native::thread::set_context()
 {
-	return static_cast<bool>(SetThreadContext(this->handle().unsafe_handle(), &this->context()));
+	return static_cast<bool>(SetThreadContext(this->handle().unsafe_handle(), &this->m_context));
 }
 
 safe_handle& native::thread::handle()

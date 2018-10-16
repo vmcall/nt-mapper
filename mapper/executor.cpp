@@ -5,6 +5,9 @@
 #include "safe_memory.hpp"
 #include "shellcode.hpp"
 
+#include <thread>
+#include <chrono>
+
 injection::executor::mode& injection::executor::execution_mode()
 {
 	return this->m_mode;
@@ -32,14 +35,96 @@ bool injection::executor::handle(map_ctx& ctx, native::process& process)
 
 bool injection::executor::handle_hijack(map_ctx& ctx, native::process& process)
 {
-	compiler::unreferenced_variable(process, ctx);
+	// CREATE SHELLCODE FOR IMAGE
+	const auto entrypoint_offset = ctx.pe().get_optional_header().AddressOfEntryPoint;
+	auto shellcode = shellcode::hijack_dllmain(ctx.remote_image(), ctx.remote_image() + entrypoint_offset);
+
+	// ALLOCATE AND INITIALISE MEMORY HANDLER (RAII)
+	auto remote_buffer = safe_memory(
+		&process,
+		process.raw_allocate(shellcode.size()));
+
+	// FAILED TO ALLOCATE?
+	if (!remote_buffer)
+	{
+		logger::log_error("Failed to allocate shellcode");
+		return false;
+	}
+
+	// FAILED TO WRITE?
+	if (!process.write_raw_memory(shellcode.data(), shellcode.size(), remote_buffer.memory()))
+	{
+		logger::log_error("Failed to write shellcode");
+		return false;
+	}
 
 	for (auto& thread : process.threads())
 	{
-		logger::log_formatted("Thread Handle", thread.handle().unsafe_handle(), true);
+		// FIND A THREAD THAT IS IDLE
+		const auto is_waiting = thread.state() == native::thread::state_t::WAITING;
+
+		const auto is_user_requested_delay =
+			thread.wait_reason() == native::thread::wait_reason_t::USER_REQUEST ||
+			thread.wait_reason() == native::thread::wait_reason_t::WR_USER_REQUEST;
+
+		if (!is_waiting || !is_user_requested_delay)
+			continue;
+
+		logger::log_formatted("Hijackable Thread", thread.thread_id(), false);
+
+		// SUSPEND THREAD TO MODIFY IT'S CONTEXT
+		if (!thread.suspend())
+		{
+			logger::log_error("Failed to suspend hijackable thread.");
+			return false;
+		}
+
+		logger::log_formatted("Stack pointer", thread.context().Rsp, true);
+
+		// ALLOCATE AND WRITE A OLD INSTRUCTION POINTER ON STACK
+		thread.context().Rsp -= sizeof(std::uintptr_t);
+
+		// ALIGN STACK TO DEFAULT 8-BYTE ALIGNMENT
+		thread.context().Rsp &= 0xFFFFFFFFFFFFFFF8;
+
+		logger::log_formatted("New Stack pointer", thread.context().Rsp, true);
+		logger::log_formatted("Instruction pointer", thread.context().Rip, true);
+
+		if (!process.write_memory(thread.context().Rip, thread.context().Rsp))
+		{
+			logger::log_error("Failed to write instruction pointer to stack.");
+			return false;
+		}
+
+		// SET NEW INSTRUCTION POINTER
+		thread.context().Rip = remote_buffer.memory();
+
+		logger::log_formatted("Shellcode", remote_buffer.memory(), true);
+		logger::log_formatted("Remote image", ctx.remote_image(), true);
+		logger::log_formatted("Entrypoint", ctx.remote_image() + entrypoint_offset, true);
+
+		// RESUME THREAD TO RUN OUR SHELLCODE
+		if (!thread.resume())
+		{
+			logger::log_error("Failed to resume hijackable thread.");
+			return false;
+		}
+
+		// WAIT FOR THREAD TO BE FINISHED
+		// ...
+		// AT THE END OF THE SHELLCODE, IT WRITES 0x1 TO SHELLCODE+6a TO ALERT EXECUTOR
+		// OF IT'S SUCCESS :)
+
+		const auto marker_address = remote_buffer.memory() + 0x6a;
+		for (std::uint8_t marker = 0x00; marker != 0x01; process.read_memory(&marker, marker_address))
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		}
+
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 bool injection::executor::handle_create(map_ctx& ctx, native::process& process)
