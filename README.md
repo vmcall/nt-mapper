@@ -4,8 +4,9 @@ PE mapper in c++17
 # Features
 + Relocate image
 + Fix import address table
+  + Handle api-set
 + Export directory parsing (forwarded and normal)
-+ Two execution modes: 'Thread creation' and 'Thread hijacking'
++ Two execution modes: 'Thread creation' and 'Thread hijacking' 
 
 # Thread Hijacker
 + Preserves all registers, volatile or not
