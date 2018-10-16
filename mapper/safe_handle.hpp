@@ -6,7 +6,7 @@ class safe_handle
 {
 public:
 	safe_handle() : m_handle(nullptr) {}
-	safe_handle(HANDLE new_handle) : m_handle(new_handle) {}
+	explicit safe_handle(HANDLE new_handle) : m_handle(new_handle) {}
 	~safe_handle() 
 	{
 		if (this->unsafe_handle())

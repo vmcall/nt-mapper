@@ -13,9 +13,9 @@ namespace native
 	{
 	public:
 		process() { }
-		process(HANDLE handle) : m_handle(handle) {}
-		process(std::uint32_t id, std::uint32_t desired_access) : m_handle(safe_handle(OpenProcess(desired_access, false, id))) { }
-		process(std::string_view process_name, std::uint32_t desired_access)
+		explicit process(HANDLE handle) : m_handle(handle) {}
+		explicit process(std::uint32_t id, std::uint32_t desired_access) : m_handle(safe_handle(OpenProcess(desired_access, false, id))) { }
+		explicit process(std::string_view process_name, std::uint32_t desired_access)
 		{
 			const auto process_id = native::process::id_from_name(process_name);
 			this->handle() = safe_handle(OpenProcess(desired_access, false, process_id));

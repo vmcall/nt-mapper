@@ -5,7 +5,7 @@
 class memory_section
 {
 public:
-	memory_section(std::uint32_t page_protection, std::uint64_t size);
+	explicit memory_section(std::uint32_t page_protection, std::uint64_t size);
 	safe_handle handle;
 	std::uint32_t protection;
 	std::uint64_t size;

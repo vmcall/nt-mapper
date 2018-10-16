@@ -9,7 +9,7 @@ class safe_memory
 {
 public:
 	safe_memory() {}
-	safe_memory(native::process* process, std::uintptr_t memory) : m_process(process), m_memory(memory) {}
+	explicit safe_memory(native::process* process, std::uintptr_t memory) : m_process(process), m_memory(memory) {}
 	~safe_memory()
 	{
 		// IF VALID COPY OF SAFE_MEMORY: FREE MEMORY

@@ -8,7 +8,7 @@ class map_ctx
 {
 public:
 	map_ctx() {}
-	map_ctx(std::string new_image_name, std::vector<std::byte> new_buffer) :
+	explicit map_ctx(std::string new_image_name, std::vector<std::byte> new_buffer) :
 		m_image_name(new_image_name), m_pe(new_buffer) {}
 
 	std::byte* pe_buffer();

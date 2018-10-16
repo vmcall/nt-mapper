@@ -5,7 +5,7 @@
 class binary_file
 {
 public:
-	binary_file(std::string_view file_path);
+	explicit binary_file(std::string_view file_path);
 
 	std::vector<std::byte>& buffer();
 private:

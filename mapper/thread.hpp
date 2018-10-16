@@ -10,14 +10,14 @@ namespace native
 	class thread
 	{
 	public:
-		thread(const HANDLE handle, const SYSTEM_THREAD_INFORMATION& info) :
+		explicit thread(const HANDLE handle, const SYSTEM_THREAD_INFORMATION& info) :
 			m_handle(handle),
 			m_state(static_cast<state_t>(info.ThreadState)), 
 			m_wait_reason(static_cast<wait_reason_t>(info.WaitReason)),
 			m_start_address(reinterpret_cast<std::uintptr_t>(info.StartAddress)),
 			m_thread_id(cast::pointer_convert<std::uint32_t>(info.ClientId.UniqueThread)) {}
 
-		thread(const HANDLE handle) : 
+		explicit thread(const HANDLE handle) :
 			m_handle(handle),
 			m_thread_id(GetThreadId(handle)) {}
 

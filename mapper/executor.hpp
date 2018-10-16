@@ -14,7 +14,7 @@ namespace injection
 			UNSPECIFIED
 		};
 
-		executor(injection::executor::mode execution_mode) : m_mode(execution_mode) {}
+		explicit executor(injection::executor::mode execution_mode) : m_mode(execution_mode) {}
 		executor() : m_mode(UNSPECIFIED){}
 
 		// ACCESSORS

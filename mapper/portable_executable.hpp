@@ -44,7 +44,7 @@ class portable_executable
 {
 public:
 	portable_executable() {};
-	portable_executable(std::vector<std::byte>& new_buffer);
+	explicit portable_executable(std::vector<std::byte>& new_buffer);
 
 	// INFORMATION
 	IMAGE_DOS_HEADER* get_dos_header();
