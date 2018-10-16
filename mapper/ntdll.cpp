@@ -6,7 +6,7 @@ NtQuerySystemInformation_t ntdll::NtQuerySystemInformation = nullptr;
 
 void ntdll::initialise()
 {
-	auto module_handle = GetModuleHandle(L"ntdll.dll");
+	const auto module_handle = GetModuleHandle(L"ntdll.dll");
 	ntdll::NtCreateSection = reinterpret_cast<NtCreateSection_t>(GetProcAddress(module_handle, "NtCreateSection"));
 	ntdll::NtMapViewOfSection = reinterpret_cast<NtMapViewOfSection_t>(GetProcAddress(module_handle, "NtMapViewOfSection"));
 	ntdll::NtQuerySystemInformation = reinterpret_cast<NtQuerySystemInformation_t>(GetProcAddress(module_handle, "NtQuerySystemInformation"));

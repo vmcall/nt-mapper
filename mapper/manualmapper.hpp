@@ -20,9 +20,9 @@ namespace injection
 	{
 	public:
 		manualmapper(native::process& proc) : m_process(proc) { }
-		uintptr_t inject(const std::vector<std::byte>& buffer, injection::executor::mode execution_mode);
+		std::uintptr_t inject(const std::vector<std::byte>& buffer, injection::executor::mode execution_mode);
 
-		using module_list = std::unordered_map<std::string, uintptr_t>;
+		using module_list = std::unordered_map<std::string, std::uintptr_t>;
 		module_list& linked_modules();
 		std::vector<map_ctx> mapped_modules();
 		native::process& process();
@@ -30,7 +30,7 @@ namespace injection
 
 	private:
 		bool map_image(map_ctx& ctx);
-		uintptr_t find_or_map_dependency(const std::string& image_name);
+		std::uintptr_t find_or_map_dependency(const std::string& image_name);
 		void write_headers(map_ctx& ctx);
 		bool call_entrypoint(map_ctx& ctx);
 		void write_image_sections(map_ctx& ctx);

@@ -14,12 +14,12 @@ native::process native::process::current_process()
 	return process(reinterpret_cast<HANDLE>(-1));
 }
 
-uint32_t native::process::id_from_name(std::string_view process_name)
+std::uint32_t native::process::id_from_name(std::string_view process_name)
 {
 	DWORD process_list[516], bytes_needed;
 	if (K32EnumProcesses(process_list, sizeof(process_list), &bytes_needed))
 	{
-		for (size_t index = 0; index < bytes_needed / sizeof(uint32_t); index++)
+		for (size_t index = 0; index < bytes_needed / sizeof(std::uint32_t); index++)
 		{
 			auto proc = process(process_list[index], PROCESS_ALL_ACCESS);
 
@@ -32,7 +32,7 @@ uint32_t native::process::id_from_name(std::string_view process_name)
 	return 0x00;
 }
 
-MEMORY_BASIC_INFORMATION native::process::virtual_query(const uintptr_t address)
+MEMORY_BASIC_INFORMATION native::process::virtual_query(const std::uintptr_t address)
 {
 	MEMORY_BASIC_INFORMATION mbi;
 
@@ -41,20 +41,20 @@ MEMORY_BASIC_INFORMATION native::process::virtual_query(const uintptr_t address)
 	return mbi;
 }
 
-uintptr_t native::process::raw_allocate(const SIZE_T virtual_size, const uintptr_t address)
+std::uintptr_t native::process::raw_allocate(const SIZE_T virtual_size, const std::uintptr_t address)
 {
-	return reinterpret_cast<uintptr_t>(
+	return reinterpret_cast<std::uintptr_t>(
 		VirtualAllocEx(this->handle().unsafe_handle(), reinterpret_cast<LPVOID>(address), virtual_size, MEM_COMMIT, PAGE_EXECUTE_READWRITE)
 		);
 }
 
-bool native::process::free_memory(const uintptr_t address)
+bool native::process::free_memory(const std::uintptr_t address)
 {
 	return VirtualFreeEx(this->handle().unsafe_handle(), reinterpret_cast<LPVOID>(address), NULL, MEM_RELEASE);
 }
 
 
-bool native::process::read_raw_memory(const void* buffer, const uintptr_t address, const SIZE_T size)
+bool native::process::read_raw_memory(const void* buffer, const std::uintptr_t address, const SIZE_T size)
 {
 	return ReadProcessMemory(
 		this->handle().unsafe_handle(),
@@ -64,7 +64,7 @@ bool native::process::read_raw_memory(const void* buffer, const uintptr_t addres
 		nullptr);
 }
 
-bool native::process::write_raw_memory(const void* buffer, const SIZE_T size, const uintptr_t address)
+bool native::process::write_raw_memory(const void* buffer, const SIZE_T size, const std::uintptr_t address)
 {
 	return WriteProcessMemory(
 		this->handle().unsafe_handle(),
@@ -74,7 +74,7 @@ bool native::process::write_raw_memory(const void* buffer, const SIZE_T size, co
 		nullptr);
 }
 
-bool native::process::virtual_protect(const uintptr_t address, uint32_t protect, uint32_t* old_protect)
+bool native::process::virtual_protect(const std::uintptr_t address, std::uint32_t protect, std::uint32_t* old_protect)
 {
 	constexpr auto page_size = 0x1000;
 
@@ -86,7 +86,7 @@ bool native::process::virtual_protect(const uintptr_t address, uint32_t protect,
 		reinterpret_cast<PDWORD>(old_protect));
 }
 
-uintptr_t native::process::map(memory_section& section)
+std::uintptr_t native::process::map(memory_section& section)
 {
 	void* base_address = nullptr;
 	SIZE_T view_size = section.size;
@@ -106,7 +106,7 @@ uintptr_t native::process::map(memory_section& section)
 		logger::log_formatted("Error code", result, true);
 	}
 
-	return reinterpret_cast<uintptr_t>(base_address);
+	return reinterpret_cast<std::uintptr_t>(base_address);
 }
 
 HWND native::process::get_main_window()
@@ -144,9 +144,9 @@ std::uint32_t native::process::get_id()
 	return GetProcessId(this->handle().unsafe_handle());
 }
 
-std::unordered_map<std::string, uintptr_t> native::process::get_modules()
+std::unordered_map<std::string, std::uintptr_t> native::process::get_modules()
 {
-	std::unordered_map<std::string, uintptr_t> result{};
+	std::unordered_map<std::string, std::uintptr_t> result{};
 	std::array<HMODULE, 200> modules{};
 
 	std::uint32_t size_needed;
@@ -178,7 +178,7 @@ std::unordered_map<std::string, uintptr_t> native::process::get_modules()
 		transformer::truncate(module_name);
 
 		// SET ENTRY
-		result[module_name] = reinterpret_cast<uintptr_t>(modules.at(module_index));
+		result[module_name] = reinterpret_cast<std::uintptr_t>(modules.at(module_index));
 	}
 
 	return result;
@@ -192,7 +192,7 @@ std::string native::process::get_name()
 	return std::string(buffer);
 }
 
-native::process::module_export native::process::get_module_export(uintptr_t module_handle, const char* function_ordinal)
+native::process::module_export native::process::get_module_export(std::uintptr_t module_handle, const char* function_ordinal)
 {
 	IMAGE_DOS_HEADER dos_header;
 	IMAGE_NT_HEADERS64 nt_header;
@@ -233,13 +233,13 @@ native::process::module_export native::process::get_module_export(uintptr_t modu
 		logger::log_error("No exports found!");
 
 	// GET DATA FROM READ MEMORY
-	const auto delta = reinterpret_cast<uintptr_t>(export_data) - export_base;
+	const auto delta = reinterpret_cast<std::uintptr_t>(export_data) - export_base;
 	const auto address_of_ordinals = reinterpret_cast<std::uint16_t*>(export_data->AddressOfNameOrdinals + delta);
 	const auto address_of_names = reinterpret_cast<std::uint32_t*>(export_data->AddressOfNames + delta);
 	const auto address_of_functions = reinterpret_cast<std::uint32_t*>(export_data->AddressOfFunctions + delta);
 
 	// ITERATE EXPORTED FUNCTIONS
-	const auto ptr_function_ordinal = reinterpret_cast<uintptr_t>(function_ordinal);
+	const auto ptr_function_ordinal = reinterpret_cast<std::uintptr_t>(function_ordinal);
 	for (size_t export_index = 0; export_index < export_data->NumberOfFunctions; export_index++)
 	{
 		const auto is_import_by_ordinal = ptr_function_ordinal <= 0xFFFF;
@@ -300,7 +300,7 @@ native::process::module_export native::process::get_module_export(uintptr_t modu
 	return native::process::module_export(0x00);
 }
 
-native::thread native::process::create_thread(const uintptr_t address, const uintptr_t argument)
+native::thread native::process::create_thread(const std::uintptr_t address, const std::uintptr_t argument)
 {
 	const auto casted_function = reinterpret_cast<LPTHREAD_START_ROUTINE>(address);
 	const auto casted_argument = reinterpret_cast<LPVOID>(argument);
@@ -338,45 +338,6 @@ std::vector<native::thread> native::process::threads()
 		thread_list.emplace_back(handle, *info);
 		return false;
 	});
-
-	// USING SNAPSHOT :)
-	//auto snapshot_handle = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0x00);
-	//
-	//if (snapshot_handle == INVALID_HANDLE_VALUE)
-	//{
-	//	logger::log_error("Failed to create snapshot for threads");
-	//	return thread_list;
-	//}
-	//
-	//THREADENTRY32 thread_entry{};
-	//thread_entry.dwSize = sizeof(thread_entry);
-	//
-	//if (!Thread32First(snapshot_handle, &thread_entry))
-	//{
-	//	logger::log_error("Failed to enumerate threads");
-	//	return thread_list;
-	//}
-	//
-	//const auto current_pid = this->get_id();
-	//
-	//do 
-	//{
-	//	const auto owner_pid = thread_entry.th32OwnerProcessID;
-	//	if (owner_pid == current_pid)
-	//	{
-	//		auto handle = OpenThread(THREAD_ALL_ACCESS, false, thread_entry.th32ThreadID);
-	//
-	//		if (handle == INVALID_HANDLE_VALUE)
-	//		{
-	//			logger::log_error("Failed to open handle to thread.");
-	//			logger::log_formatted("Thread Id", thread_entry.th32ThreadID, true);
-	//			continue;
-	//		}
-	//
-	//		thread_list.emplace_back(handle);
-	//	}
-	//
-	//} while (Thread32Next(snapshot_handle, &thread_entry));
 
 	return thread_list;
 }

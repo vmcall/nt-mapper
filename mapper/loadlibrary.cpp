@@ -27,7 +27,7 @@ bool injection::loadlibrary::inject(std::string_view buffer)
 
 	// FIND LOADLIBRARY
 	const auto module_handle = GetModuleHandle(L"kernel32.dll");
-	const auto function_pointer = reinterpret_cast<uintptr_t>(GetProcAddress(module_handle, "LoadLibraryA"));
+	const auto function_pointer = reinterpret_cast<std::uintptr_t>(GetProcAddress(module_handle, "LoadLibraryA"));
 
 	// FAILED TO CREATE THREAD?
 	auto thread = process.create_thread(function_pointer, 0x00);

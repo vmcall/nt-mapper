@@ -2,7 +2,7 @@
 #include "maker.hpp"
 #include "cast.hpp"
 
-std::array<std::byte, shellcode::call_dllmain_size> shellcode::call_dllmain(uintptr_t image, uintptr_t dllmain)
+std::array<std::byte, shellcode::call_dllmain_size> shellcode::call_dllmain(std::uintptr_t image, std::uintptr_t dllmain)
 {
 	// dllmain_call_x64.asm
 	auto shellcode = maker::create_byte_array(
@@ -12,8 +12,8 @@ std::array<std::byte, shellcode::call_dllmain_size> shellcode::call_dllmain(uint
 		0x4D, 0x31, 0xC0, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x28, 0xC3);
 
-	*cast::pointer(shellcode.data() + 0x6) = image;
-	*cast::pointer(shellcode.data() + 0x1A) = dllmain;
+	*cast::long_pointer(shellcode.data() + 0x6) = image;
+	*cast::long_pointer(shellcode.data() + 0x1A) = dllmain;
 
 	return shellcode;
 }
@@ -25,12 +25,12 @@ std::array<std::byte, shellcode::hijack_dllmain_size> shellcode::hijack_dllmain(
 	
 	constexpr auto shadowspace_size = 0x100;
 
-	*reinterpret_cast<std::uint32_t*>(shellcode.data() + 0x1B) = shadowspace_size;
+	*cast::int_pointer(shellcode.data() + 0x1B) = shadowspace_size;
 
-	*cast::pointer(shellcode.data() + 0x21) = image;
-	*cast::pointer(shellcode.data() + 0x35) = dllmain;
+	*cast::long_pointer(shellcode.data() + 0x21) = image;
+	*cast::long_pointer(shellcode.data() + 0x35) = dllmain;
 
-	*reinterpret_cast<std::uint32_t*>(shellcode.data() + 0x42) = shadowspace_size;
+	*cast::int_pointer(shellcode.data() + 0x42) = shadowspace_size;
 
 	return shellcode;
 }

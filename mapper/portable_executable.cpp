@@ -38,7 +38,7 @@ IMAGE_OPTIONAL_HEADER portable_executable::get_optional_header()
 	return this->optional_header;
 }
 
-uintptr_t portable_executable::get_image_base()
+std::uintptr_t portable_executable::get_image_base()
 {
 	return this->optional_header.ImageBase;
 }
@@ -60,15 +60,15 @@ void portable_executable::parse_sections()
 		this->sections.push_back(section_pointer[index]);
 }
 
-relocation_list portable_executable::get_relocations(uintptr_t image_base)
+relocation_list portable_executable::get_relocations(std::uintptr_t image_base)
 {
 	relocation_list result;
 	auto section = this->optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];
 	auto base_relocation = reinterpret_cast<IMAGE_BASE_RELOCATION*>(image_base + section.VirtualAddress);
-	auto end_relocation = reinterpret_cast<uintptr_t>(base_relocation) + section.Size;
+	auto end_relocation = reinterpret_cast<std::uintptr_t>(base_relocation) + section.Size;
 	auto reloc = reinterpret_cast<reloc_data*>(base_relocation);
 
-	while (reinterpret_cast<uintptr_t>(reloc) < end_relocation && reloc->block_size > 0)
+	while (reinterpret_cast<std::uintptr_t>(reloc) < end_relocation && reloc->block_size > 0)
 	{
 		auto count = (reloc->block_size - 8) >> 1;
 		for (size_t relocation_index = 0; relocation_index < count; ++relocation_index)
@@ -78,13 +78,13 @@ relocation_list portable_executable::get_relocations(uintptr_t image_base)
 				result.emplace_back(*reloc, reloc->item[relocation_index]);
 		}
 
-		reloc = reinterpret_cast<reloc_data*>(reinterpret_cast<uintptr_t>(reloc) + reloc->block_size);
+		reloc = reinterpret_cast<reloc_data*>(reinterpret_cast<std::uintptr_t>(reloc) + reloc->block_size);
 	}
 
 	return result;
 }
 
-import_list portable_executable::get_imports(uintptr_t image_base)
+import_list portable_executable::get_imports(std::uintptr_t image_base)
 {
 	import_list import_modules;
 
@@ -97,13 +97,13 @@ import_list portable_executable::get_imports(uintptr_t image_base)
 		previous_name < import_table->Name; 
 		previous_name = import_table->Name, ++import_table)
 	{
-		auto module_name = std::string(reinterpret_cast<char*>(image_base + (uintptr_t)import_table->Name));
+		auto module_name = std::string(reinterpret_cast<char*>(image_base + (std::uintptr_t)import_table->Name));
 
 		// CONVERT TO LOWER
 		transformer::string_to_lower(module_name);
 
 		auto entry = reinterpret_cast<IMAGE_THUNK_DATA64*>(image_base + import_table->OriginalFirstThunk);
-		for (uintptr_t index = 0; entry->u1.AddressOfData; index += sizeof(uintptr_t), ++entry)
+		for (std::uintptr_t index = 0; entry->u1.AddressOfData; index += sizeof(std::uintptr_t), ++entry)
 		{
 			auto import_by_name = reinterpret_cast<IMAGE_IMPORT_BY_NAME*>(image_base + entry->u1.AddressOfData);
 
@@ -123,7 +123,7 @@ import_list portable_executable::get_imports(uintptr_t image_base)
 }
 
 // THX DAAX <3
-export_list portable_executable::get_exports(uintptr_t image_base)
+export_list portable_executable::get_exports(std::uintptr_t image_base)
 {
 	export_list exports;
 
@@ -133,14 +133,12 @@ export_list portable_executable::get_exports(uintptr_t image_base)
 	for (unsigned int iter = 0; iter < export_dir->NumberOfFunctions; ++iter)
 	{
 		export_data data = { 0 };
-		data.name = reinterpret_cast<char*>(image_base + reinterpret_cast<unsigned long*>(image_base + export_dir->AddressOfNames)[iter]);
-		data.ordinal = reinterpret_cast<unsigned short*>(image_base + export_dir->AddressOfNameOrdinals)[iter];
-		data.function_rva = image_base + reinterpret_cast<unsigned long*>(image_base + export_dir->AddressOfFunctions)[iter];
+		data.name = reinterpret_cast<char*>(image_base + reinterpret_cast<std::uint32_t*>(image_base + export_dir->AddressOfNames)[iter]);
+		data.ordinal = reinterpret_cast<std::uint16_t*>(image_base + export_dir->AddressOfNameOrdinals)[iter];
+		data.function_rva = image_base + reinterpret_cast<std::uint32_t*>(image_base + export_dir->AddressOfFunctions)[iter];
 
 		exports[data.name].emplace_back(data);
 	}
-
-	return exports;
 
 	return exports;
 }

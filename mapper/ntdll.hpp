@@ -84,7 +84,7 @@ namespace ntdll
 	__forceinline void enumerate_threads(Fn callback)
 	{
 		ntdll::enumerate_processes([=](SYSTEM_PROCESS_INFORMATION* info) {
-			const auto info_casted = reinterpret_cast<uintptr_t>(info);
+			const auto info_casted = reinterpret_cast<std::uintptr_t>(info);
 			const auto thread_info = reinterpret_cast<SYSTEM_THREAD_INFORMATION*>(info_casted + sizeof(SYSTEM_PROCESS_INFORMATION));
 			for (std::uint32_t thread_index = 0; thread_index < info->NumberOfThreads; ++thread_index)
 			{

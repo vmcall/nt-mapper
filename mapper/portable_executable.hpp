@@ -6,32 +6,32 @@
 
 struct reloc_item
 {
-	WORD offset : 12;
-	WORD type : 4;
+	std::uint16_t offset : 12;
+	std::uint16_t type : 4;
 
-	WORD get_offset()
+	std::uint16_t get_offset()
 	{
 		return offset % 4096;
 	}
 };
 struct reloc_data
 {
-	ULONG page_rva;
-	ULONG block_size;
+	std::uint32_t page_rva;
+	std::uint32_t block_size;
 	reloc_item item[1];
 };
 
 struct import_data
 {
 	std::string name;
-	uintptr_t function_rva;
-	uintptr_t ordinal = 0;
+	std::uintptr_t function_rva;
+	std::uintptr_t ordinal = 0;
 };
 
 struct export_data
 {
 	std::string name;
-	uintptr_t function_rva;
+	std::uintptr_t function_rva;
 	uint16_t ordinal;
 };
 
@@ -51,14 +51,14 @@ public:
 	IMAGE_NT_HEADERS* get_nt_headers();
 	IMAGE_FILE_HEADER get_file_header();
 	IMAGE_OPTIONAL_HEADER get_optional_header();
-	uintptr_t get_image_base();
+	std::uintptr_t get_image_base();
 
 	// RESOURCES
 	std::vector<std::byte>& get_buffer();
 	section_list& get_sections();
-	relocation_list get_relocations(uintptr_t image_base);
-	import_list get_imports(uintptr_t image_base);
-	export_list get_exports(uintptr_t image_base);
+	relocation_list get_relocations(std::uintptr_t image_base);
+	import_list get_imports(std::uintptr_t image_base);
+	export_list get_exports(std::uintptr_t image_base);
 
 private:
 	void parse_sections();

@@ -14,7 +14,7 @@ namespace native
 			m_handle(handle),
 			m_state(static_cast<state_t>(info.ThreadState)), 
 			m_wait_reason(static_cast<wait_reason_t>(info.WaitReason)),
-			m_start_address(reinterpret_cast<uintptr_t>(info.StartAddress)),
+			m_start_address(reinterpret_cast<std::uintptr_t>(info.StartAddress)),
 			m_thread_id(cast::pointer_convert<std::uint32_t>(info.ClientId.UniqueThread)) {}
 
 		thread(const HANDLE handle) : 

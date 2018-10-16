@@ -121,7 +121,7 @@ void injection::manualmapper::relocate_image_by_delta(map_ctx& ctx)
 
 	// UPDATE POINTERS WITH THE NEW IMAGE BASE DIFFERENCE
 	for (auto&[entry, item] : ctx.pe().get_relocations(ctx.local_image()))
-		*cast::pointer(ctx.local_image() + entry.page_rva + item.get_offset()) += delta;
+		*cast::long_pointer(ctx.local_image() + entry.page_rva + item.get_offset()) += delta;
 }
 
 void injection::manualmapper::fix_import_table(map_ctx& ctx)
@@ -161,7 +161,7 @@ void injection::manualmapper::fix_import_table(map_ctx& ctx)
 			// UPDATE IMPORTED FUNCTION POINTER
 			if (exported_function.function != 0x00)
 			{
-				*cast::pointer(ctx.local_image() + fn.function_rva) = exported_function.function;
+				*cast::long_pointer(ctx.local_image() + fn.function_rva) = exported_function.function;
 			}
 			else
 			{
@@ -174,7 +174,6 @@ void injection::manualmapper::fix_import_table(map_ctx& ctx)
 
 native::process::module_export injection::manualmapper::handle_forwarded_export(native::process::module_export& exported_function, api_set& api_schema)
 {
-
 	// QUERY API SCHEMA FOR NAME
 	wstring_converter converter;
 	auto library_name = exported_function.forwarded_library;

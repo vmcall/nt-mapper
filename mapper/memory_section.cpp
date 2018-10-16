@@ -3,7 +3,7 @@
 #include "logger.hpp"
 #include <windows.h>
 
-memory_section::memory_section(uint32_t page_protection, uint64_t size)
+memory_section::memory_section(std::uint32_t page_protection, std::uint64_t size)
 {
 	HANDLE new_handle;
 	LARGE_INTEGER large_size;
@@ -20,9 +20,4 @@ memory_section::memory_section(uint32_t page_protection, uint64_t size)
 	this->handle = safe_handle(new_handle);
 	this->protection = page_protection;
 	this->size = size;
-}
-
-memory_section::operator bool()
-{
-	return static_cast<bool>(this->handle);
 }

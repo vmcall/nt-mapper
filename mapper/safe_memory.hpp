@@ -9,7 +9,7 @@ class safe_memory
 {
 public:
 	safe_memory() {}
-	safe_memory(native::process* process, uintptr_t memory) : m_process(process), m_memory(memory) {}
+	safe_memory(native::process* process, std::uintptr_t memory) : m_process(process), m_memory(memory) {}
 	~safe_memory()
 	{
 		// IF VALID COPY OF SAFE_MEMORY: FREE MEMORY
@@ -50,7 +50,7 @@ public:
 		return this->memory() != 0x00;
 	}
 
-	inline auto memory() -> uintptr_t&
+	inline auto memory() -> std::uintptr_t&
 	{
 		return this->m_memory;
 	}
@@ -65,6 +65,6 @@ public:
 	}
 
 private:
-	uintptr_t m_memory;
+	std::uintptr_t m_memory;
 	native::process* m_process;
 };

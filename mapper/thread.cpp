@@ -13,13 +13,13 @@ bool native::thread::resume()
 		return false;
 
 	// RESUME
-	return ResumeThread(this->handle().unsafe_handle()) != static_cast<DWORD>(0xFFFFFFFF);
+	return ResumeThread(this->handle().unsafe_handle()) != 0xFFFFFFFF;
 }
 
 bool native::thread::suspend()
 {
 	// SUSPEND THREAD
-	if (SuspendThread(this->handle().unsafe_handle()) == static_cast<DWORD>(0xFFFFFFFF))
+	if (SuspendThread(this->handle().unsafe_handle()) == 0xFFFFFFFF)
 		return false;
 
 	// GET CONTEXT
@@ -41,7 +41,7 @@ bool native::thread::fetch()
 		// FETCH
 		this->state() = static_cast<native::thread::state_t>(thread_info->ThreadState);
 		this->wait_reason() = static_cast<native::thread::wait_reason_t>(thread_info->WaitReason);
-		this->start_address() = reinterpret_cast<uintptr_t>(thread_info->StartAddress);
+		this->start_address() = reinterpret_cast<std::uintptr_t>(thread_info->StartAddress);
 
 		return true;
 	});

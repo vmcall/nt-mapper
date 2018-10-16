@@ -7,11 +7,11 @@
 
 api_set::api_set()
 {
-	auto peb = reinterpret_cast<uintptr_t>(NtCurrentTeb()->ProcessEnvironmentBlock);
+	const auto peb = reinterpret_cast<std::uintptr_t>(NtCurrentTeb()->ProcessEnvironmentBlock);
 
 	auto api_set = *reinterpret_cast<API_SET_NAMESPACE_ARRAY**>(peb + 0x68);
 
-	for (size_t entry_index = 0; entry_index < api_set->count; ++entry_index)
+	for (std::size_t entry_index = 0; entry_index < api_set->count; ++entry_index)
 	{
 		auto descriptor = api_set->entry(entry_index);
 
@@ -28,7 +28,7 @@ api_set::api_set()
 		{
 			auto host = host_data->entry(api_set, j);
 
-			std::wstring host_name(reinterpret_cast<wchar_t*>(reinterpret_cast<uint8_t*>(api_set) + host->value_offset),
+			std::wstring host_name(reinterpret_cast<wchar_t*>(reinterpret_cast<std::byte*>(api_set) + host->value_offset),
 				host->value_length / sizeof(wchar_t));
 
 			if (!host_name.empty())
@@ -50,11 +50,9 @@ bool api_set::query(std::wstring& name)
 		return name.find(val.first.c_str()) != name.npos;
 	});
 
-	if (iter != this->schema.end()) // FOUND
-	{
-		name = iter->second.front() != name ? iter->second.front() : iter->second.back();
-		return true;
-	}
+	if (iter == this->schema.end()) // FOUND
+		return false;
 
-	return false;
+	name = iter->second.front() != name ? iter->second.front() : iter->second.back();
+	return true;
 }

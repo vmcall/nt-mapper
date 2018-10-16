@@ -15,12 +15,12 @@ std::string& map_ctx::image_name()
 	return this->m_image_name;
 }
 
-uintptr_t& map_ctx::local_image()
+std::uintptr_t& map_ctx::local_image()
 {
 	return this->m_local_image;
 }
 
-uintptr_t& map_ctx::remote_image()
+std::uintptr_t& map_ctx::remote_image()
 {
 	return this->m_remote_image;
 }
