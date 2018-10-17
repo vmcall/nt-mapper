@@ -7,15 +7,15 @@
 class map_ctx
 {
 public:
-	map_ctx() {}
-	explicit map_ctx(std::string new_image_name, std::vector<std::byte> new_buffer) :
+	map_ctx() noexcept {}
+	explicit map_ctx(std::string new_image_name, std::vector<std::byte> new_buffer) noexcept :
 		m_image_name(new_image_name), m_pe(new_buffer) {}
 
-	std::byte* pe_buffer();
-	portable_executable& pe();
-	std::string& image_name();
-	std::uintptr_t& local_image();
-	std::uintptr_t& remote_image();
+	std::byte* pe_buffer() noexcept;
+	portable_executable& pe() noexcept;
+	std::string& image_name() noexcept;
+	std::uintptr_t& local_image() noexcept;
+	std::uintptr_t& remote_image() noexcept;
 
 private:
 	std::string m_image_name;

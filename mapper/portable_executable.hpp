@@ -9,7 +9,7 @@ struct reloc_item
 	std::uint16_t offset : 12;
 	std::uint16_t type : 4;
 
-	std::uint16_t get_offset()
+	std::uint16_t get_offset() noexcept
 	{
 		return offset % 4096;
 	}
@@ -44,24 +44,24 @@ class portable_executable
 {
 public:
 	portable_executable() {};
-	explicit portable_executable(std::vector<std::byte>& new_buffer);
+	explicit portable_executable(std::vector<std::byte>& new_buffer) noexcept;
 
 	// INFORMATION
-	IMAGE_DOS_HEADER* get_dos_header();
-	IMAGE_NT_HEADERS* get_nt_headers();
-	IMAGE_FILE_HEADER get_file_header();
-	IMAGE_OPTIONAL_HEADER get_optional_header();
-	std::uintptr_t get_image_base();
+	IMAGE_DOS_HEADER* get_dos_header() noexcept;
+	IMAGE_NT_HEADERS* get_nt_headers() noexcept;
+	IMAGE_FILE_HEADER get_file_header() noexcept;
+	IMAGE_OPTIONAL_HEADER get_optional_header() noexcept;
+	std::uintptr_t get_image_base() noexcept;
 
 	// RESOURCES
-	std::vector<std::byte>& get_buffer();
-	section_list& get_sections();
-	relocation_list get_relocations(std::uintptr_t image_base);
-	import_list get_imports(std::uintptr_t image_base);
-	export_list get_exports(std::uintptr_t image_base);
+	std::vector<std::byte>& get_buffer() noexcept;
+	section_list& get_sections() noexcept;
+	relocation_list get_relocations(std::uintptr_t image_base) noexcept;
+	import_list get_imports(std::uintptr_t image_base) noexcept;
+	export_list get_exports(std::uintptr_t image_base) noexcept;
 
 private:
-	void parse_sections();
+	void parse_sections() noexcept;
 	IMAGE_DOS_HEADER* dos_header;
 	IMAGE_NT_HEADERS* nt_headers;
 	IMAGE_OPTIONAL_HEADER optional_header;

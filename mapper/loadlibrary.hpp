@@ -7,8 +7,8 @@ namespace injection
 	class loadlibrary
 	{
 	public:
-		explicit loadlibrary(native::process& proc) : process(proc) {}
-		bool inject(std::string_view buffer);
+		explicit loadlibrary(native::process& proc) noexcept : process(proc) {}
+		bool inject(std::string_view buffer) noexcept;
 
 	protected:
 		native::process& process;

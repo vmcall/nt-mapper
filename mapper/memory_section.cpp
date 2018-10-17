@@ -3,7 +3,7 @@
 #include "logger.hpp"
 #include <windows.h>
 
-memory_section::memory_section(std::uint32_t page_protection, std::uint64_t size)
+memory_section::memory_section(std::uint32_t page_protection, std::uint64_t size) noexcept
 {
 	HANDLE new_handle;
 	LARGE_INTEGER large_size;

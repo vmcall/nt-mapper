@@ -34,7 +34,7 @@ using NtQuerySystemInformation_t = NTSTATUS(NTAPI*)(
 
 namespace ntdll
 {
-	void initialise();
+	void initialise() noexcept;
 	extern NtCreateSection_t NtCreateSection;
 	extern NtMapViewOfSection_t NtMapViewOfSection;
 	extern NtQuerySystemInformation_t NtQuerySystemInformation;
@@ -42,7 +42,7 @@ namespace ntdll
 
 	// NATIVE ENUMERATORS
 	template <class Fn>
-	__forceinline void enumerate_processes(Fn callback)
+	void enumerate_processes(Fn callback) noexcept
 	{
 		constexpr auto size_mismatch = 0xC0000004;
 		constexpr auto process_type = SystemProcessInformation;
@@ -81,7 +81,7 @@ namespace ntdll
 	}
 
 	template <class Fn>
-	__forceinline void enumerate_threads(Fn callback)
+	void enumerate_threads(Fn callback) noexcept
 	{
 		ntdll::enumerate_processes([=](SYSTEM_PROCESS_INFORMATION* info) {
 			const auto info_casted = reinterpret_cast<std::uintptr_t>(info);

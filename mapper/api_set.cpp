@@ -5,7 +5,7 @@
 #include <winternl.h>
 #include <string>
 
-api_set::api_set()
+api_set::api_set() noexcept
 {
 	const auto peb = reinterpret_cast<std::uintptr_t>(NtCurrentTeb()->ProcessEnvironmentBlock);
 
@@ -42,7 +42,7 @@ api_set::api_set()
 	}
 }
 
-bool api_set::query(std::wstring& name)
+bool api_set::query(std::wstring& name) noexcept
 {
 	// SEARCH FOR ANY ENTRIES OF OUR PROXY DLL
 	auto iter = std::find_if(this->schema.begin(), this->schema.end(), [name](const map_api_schema::value_type& val)

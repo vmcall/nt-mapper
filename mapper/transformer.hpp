@@ -8,29 +8,29 @@ namespace transformer
 {
 	namespace detail
 	{
-		__forceinline char character_to_lower(char character)
+		inline char character_to_lower(char character) noexcept
 		{
 			return static_cast<char>(tolower(character));
 		}
-		__forceinline wchar_t wide_character_to_lower(wchar_t character)
+		inline wchar_t wide_character_to_lower(wchar_t character) noexcept
 		{
 			return static_cast<wchar_t>(towlower(character));
 		}
 	}
 
-	__forceinline void string_to_lower(std::string& data)
+	inline void string_to_lower(std::string& data) noexcept
 	{
 		std::transform(data.begin(), data.end(), data.begin(), transformer::detail::character_to_lower);
 	}
-	__forceinline void string_to_lower(std::wstring& data)
+	inline void string_to_lower(std::wstring& data) noexcept
 	{
 		std::transform(data.begin(), data.end(), data.begin(), transformer::detail::wide_character_to_lower);
 	}
-	__forceinline void string_to_lower(std::wstring& data, std::size_t size)
+	inline void string_to_lower(std::wstring& data, std::size_t size) noexcept
 	{
 		std::transform(data.begin(), data.begin() + size, data.begin(), transformer::detail::wide_character_to_lower);
 	}
-	__forceinline void truncate(std::string& data)
+	inline void truncate(std::string& data) noexcept
 	{
 		data.erase(std::find(data.begin(), data.end(), '\0'), data.end());
 	}

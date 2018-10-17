@@ -9,12 +9,12 @@
 #include <Psapi.h>
 #include <array>
 
-native::process native::process::current_process()
+native::process native::process::current_process() noexcept
 {
 	return process(reinterpret_cast<HANDLE>(-1));
 }
 
-std::uint32_t native::process::id_from_name(std::string_view process_name)
+std::uint32_t native::process::id_from_name(std::string_view process_name) noexcept
 {
 	DWORD process_list[516], bytes_needed;
 	if (K32EnumProcesses(process_list, sizeof(process_list), &bytes_needed))
@@ -32,7 +32,7 @@ std::uint32_t native::process::id_from_name(std::string_view process_name)
 	return 0x00;
 }
 
-MEMORY_BASIC_INFORMATION native::process::virtual_query(const std::uintptr_t address)
+MEMORY_BASIC_INFORMATION native::process::virtual_query(const std::uintptr_t address) noexcept
 {
 	MEMORY_BASIC_INFORMATION mbi;
 
@@ -41,20 +41,20 @@ MEMORY_BASIC_INFORMATION native::process::virtual_query(const std::uintptr_t add
 	return mbi;
 }
 
-std::uintptr_t native::process::raw_allocate(const SIZE_T virtual_size, const std::uintptr_t address)
+std::uintptr_t native::process::raw_allocate(const SIZE_T virtual_size, const std::uintptr_t address) noexcept
 {
 	return reinterpret_cast<std::uintptr_t>(
 		VirtualAllocEx(this->handle().unsafe_handle(), reinterpret_cast<LPVOID>(address), virtual_size, MEM_COMMIT, PAGE_EXECUTE_READWRITE)
 		);
 }
 
-bool native::process::free_memory(const std::uintptr_t address)
+bool native::process::free_memory(const std::uintptr_t address) noexcept
 {
 	return VirtualFreeEx(this->handle().unsafe_handle(), reinterpret_cast<LPVOID>(address), NULL, MEM_RELEASE);
 }
 
 
-bool native::process::read_raw_memory(const void* buffer, const std::uintptr_t address, const SIZE_T size)
+bool native::process::read_raw_memory(const void* buffer, const std::uintptr_t address, const std::size_t size) noexcept
 {
 	return ReadProcessMemory(
 		this->handle().unsafe_handle(),
@@ -64,7 +64,7 @@ bool native::process::read_raw_memory(const void* buffer, const std::uintptr_t a
 		nullptr);
 }
 
-bool native::process::write_raw_memory(const void* buffer, const SIZE_T size, const std::uintptr_t address)
+bool native::process::write_raw_memory(const void* buffer, const std::uintptr_t address, const std::size_t size) noexcept
 {
 	return WriteProcessMemory(
 		this->handle().unsafe_handle(),
@@ -74,7 +74,7 @@ bool native::process::write_raw_memory(const void* buffer, const SIZE_T size, co
 		nullptr);
 }
 
-bool native::process::virtual_protect(const std::uintptr_t address, std::uint32_t protect, std::uint32_t* old_protect)
+bool native::process::virtual_protect(const std::uintptr_t address, std::uint32_t protect, std::uint32_t* old_protect) noexcept
 {
 	constexpr auto page_size = 0x1000;
 
@@ -86,7 +86,7 @@ bool native::process::virtual_protect(const std::uintptr_t address, std::uint32_
 		reinterpret_cast<PDWORD>(old_protect));
 }
 
-std::uintptr_t native::process::map(memory_section& section)
+std::uintptr_t native::process::map(memory_section& section) noexcept
 {
 	void* base_address = nullptr;
 	SIZE_T view_size = section.size;
@@ -109,7 +109,7 @@ std::uintptr_t native::process::map(memory_section& section)
 	return reinterpret_cast<std::uintptr_t>(base_address);
 }
 
-HWND native::process::get_main_window()
+HWND native::process::get_main_window() noexcept
 {
 	// SETUP CONTAINER
 	using window_data_t = std::pair<std::uint32_t, HWND>;
@@ -139,12 +139,12 @@ HWND native::process::get_main_window()
 	return window_data.second;
 }
 
-std::uint32_t native::process::get_id()
+std::uint32_t native::process::get_id() noexcept
 {
 	return GetProcessId(this->handle().unsafe_handle());
 }
 
-std::unordered_map<std::string, std::uintptr_t> native::process::get_modules()
+std::unordered_map<std::string, std::uintptr_t> native::process::get_modules() noexcept
 {
 	std::unordered_map<std::string, std::uintptr_t> result{};
 	std::array<HMODULE, 200> modules{};
@@ -184,7 +184,7 @@ std::unordered_map<std::string, std::uintptr_t> native::process::get_modules()
 	return result;
 }
 
-std::string native::process::get_name()
+std::string native::process::get_name() noexcept
 {
 	char buffer[MAX_PATH];
 	GetModuleBaseNameA(this->handle().unsafe_handle(), nullptr, buffer, MAX_PATH);
@@ -192,7 +192,7 @@ std::string native::process::get_name()
 	return std::string(buffer);
 }
 
-native::process::module_export native::process::get_module_export(std::uintptr_t module_handle, const char* function_ordinal)
+native::process::module_export native::process::get_module_export(std::uintptr_t module_handle, const char* function_ordinal) noexcept
 {
 	IMAGE_DOS_HEADER dos_header;
 	IMAGE_NT_HEADERS64 nt_header;
@@ -300,7 +300,7 @@ native::process::module_export native::process::get_module_export(std::uintptr_t
 	return native::process::module_export(0x00);
 }
 
-native::thread native::process::create_thread(const std::uintptr_t address, const std::uintptr_t argument)
+native::thread native::process::create_thread(const std::uintptr_t address, const std::uintptr_t argument) noexcept
 {
 	const auto casted_function = reinterpret_cast<LPTHREAD_START_ROUTINE>(address);
 	const auto casted_argument = reinterpret_cast<LPVOID>(argument);
@@ -314,7 +314,7 @@ native::thread native::process::create_thread(const std::uintptr_t address, cons
 	return native::thread(thread_handle);
 }
 
-std::vector<native::thread> native::process::threads()
+std::vector<native::thread> native::process::threads() noexcept
 {
 	std::vector<native::thread> thread_list{};
 
@@ -342,7 +342,7 @@ std::vector<native::thread> native::process::threads()
 	return thread_list;
 }
 
-safe_handle& native::process::handle()
+safe_handle& native::process::handle() noexcept
 {
 	return this->m_handle;
 }

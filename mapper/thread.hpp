@@ -10,33 +10,33 @@ namespace native
 	class thread
 	{
 	public:
-		explicit thread(const HANDLE handle, const SYSTEM_THREAD_INFORMATION& info) :
+		explicit thread(const HANDLE handle, const SYSTEM_THREAD_INFORMATION& info) noexcept :
 			m_handle(handle),
 			m_state(static_cast<state_t>(info.ThreadState)), 
 			m_wait_reason(static_cast<wait_reason_t>(info.WaitReason)),
 			m_start_address(reinterpret_cast<std::uintptr_t>(info.StartAddress)),
 			m_thread_id(cast::pointer_convert<std::uint32_t>(info.ClientId.UniqueThread)) {}
 
-		explicit thread(const HANDLE handle) :
+		explicit thread(const HANDLE handle) noexcept :
 			m_handle(handle),
 			m_thread_id(GetThreadId(handle)) {}
 
-		thread() : m_handle(nullptr) {}
+		thread() noexcept : m_handle(nullptr) {}
 
-		explicit operator bool()
+		explicit operator bool() noexcept
 		{
 			return this->handle().unsafe_handle() != nullptr;
 		}
 
-		bool wait(const std::uint32_t max_time = 0);
+		bool wait(const std::uint32_t max_time = 0) noexcept;
 
-		bool resume();
-		bool suspend();
+		bool resume() noexcept;
+		bool suspend() noexcept;
 
 		// DOCUMENTED DATA
-		std::uint32_t& thread_id();
-		CONTEXT& context();
-		safe_handle& handle();
+		std::uint32_t& thread_id() noexcept;
+		CONTEXT& context() noexcept;
+		safe_handle& handle() noexcept;
 
 		// UNDOCUMENTED DATA
 		enum wait_reason_t : std::uint8_t
@@ -69,15 +69,15 @@ namespace native
 			GATE_WAIT
 		};
 
-		bool fetch();
-		state_t& state();
-		wait_reason_t& wait_reason();
-		std::uintptr_t& start_address();
+		bool fetch() noexcept;
+		state_t& state() noexcept;
+		wait_reason_t& wait_reason() noexcept;
+		std::uintptr_t& start_address() noexcept;
 
 
 	private:
-		bool get_context();
-		bool set_context();
+		bool get_context() noexcept;
+		bool set_context() noexcept;
 
 		state_t m_state;
 		CONTEXT m_context;

@@ -8,17 +8,12 @@
 #include <thread>
 #include <chrono>
 
-injection::executor::mode& injection::executor::execution_mode()
+injection::executor::mode& injection::executor::execution_mode() noexcept
 {
 	return this->m_mode;
 }
 
-injection::executor::operator bool()
-{
-	return this->execution_mode() != injection::executor::mode::UNSPECIFIED;
-}
-
-bool injection::executor::handle(map_ctx& ctx, native::process& process)
+bool injection::executor::handle(map_ctx& ctx, native::process& process) noexcept
 {
 	switch (this->execution_mode())
 	{
@@ -33,7 +28,7 @@ bool injection::executor::handle(map_ctx& ctx, native::process& process)
 	}
 }
 
-bool injection::executor::handle_hijack(map_ctx& ctx, native::process& process)
+bool injection::executor::handle_hijack(map_ctx& ctx, native::process& process) noexcept
 {
 	// CREATE SHELLCODE FOR IMAGE
 	const auto entrypoint_offset = ctx.pe().get_optional_header().AddressOfEntryPoint;
@@ -44,6 +39,8 @@ bool injection::executor::handle_hijack(map_ctx& ctx, native::process& process)
 		&process,
 		process.raw_allocate(shellcode.size()));
 
+	logger::log_formatted("Shellcode", remote_buffer.memory(), true);
+
 	// FAILED TO ALLOCATE?
 	if (!remote_buffer)
 	{
@@ -52,7 +49,7 @@ bool injection::executor::handle_hijack(map_ctx& ctx, native::process& process)
 	}
 
 	// FAILED TO WRITE?
-	if (!process.write_raw_memory(shellcode.data(), shellcode.size(), remote_buffer.memory()))
+	if (!process.write_raw_memory(shellcode.data(), remote_buffer.memory(), shellcode.size()))
 	{
 		logger::log_error("Failed to write shellcode");
 		return false;
@@ -98,7 +95,6 @@ bool injection::executor::handle_hijack(map_ctx& ctx, native::process& process)
 
 		logger::log_formatted("New Stack pointer", thread.context().Rsp, true);
 		logger::log_formatted("Instruction pointer", thread.context().Rip, true);
-		logger::log_formatted("Shellcode", remote_buffer.memory(), true);
 		logger::log_formatted("Entrypoint", ctx.remote_image() + entrypoint_offset, true);
 
 		// RESUME THREAD TO RUN OUR SHELLCODE
@@ -124,7 +120,7 @@ bool injection::executor::handle_hijack(map_ctx& ctx, native::process& process)
 	return false;
 }
 
-bool injection::executor::handle_create(map_ctx& ctx, native::process& process)
+bool injection::executor::handle_create(map_ctx& ctx, native::process& process) noexcept
 {
 	// CREATE SHELLCODE FOR IMAGE
 	const auto entrypoint_offset = ctx.pe().get_optional_header().AddressOfEntryPoint;
@@ -143,7 +139,7 @@ bool injection::executor::handle_create(map_ctx& ctx, native::process& process)
 	}
 
 	// FAILED TO WRITE?
-	if (!process.write_raw_memory(shellcode.data(), shellcode.size(), remote_buffer.memory()))
+	if (!process.write_raw_memory(shellcode.data(), remote_buffer.memory(), shellcode.size()))
 	{
 		logger::log_error("Failed to write shellcode");
 		return false;

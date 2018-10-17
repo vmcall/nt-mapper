@@ -4,11 +4,11 @@
 
 namespace logger
 {
-	void log(std::string_view message);
-	void log_error(std::string_view message);
+	void log(std::string_view message) noexcept;
+	void log_error(std::string_view message) noexcept;
 
 	template <class T>
-	__forceinline void log_formatted(std::string_view variable_name, const T& variable_data, const bool hexadecimal)
+	void log_formatted(std::string_view variable_name, const T& variable_data, const bool hexadecimal) noexcept
 	{
 		std::cout << "[?] " << variable_name << ": ";
 		std::cout << (hexadecimal ? std::hex : std::dec);

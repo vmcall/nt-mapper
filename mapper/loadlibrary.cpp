@@ -4,7 +4,7 @@
 #include "safe_memory.hpp"
 
 
-bool injection::loadlibrary::inject(std::string_view buffer)
+bool injection::loadlibrary::inject(std::string_view buffer) noexcept
 {
 	// ALLOCATE AND INITIALISE MEMORY HANDLER (RAII)
 	auto remote_buffer = safe_memory(
@@ -19,7 +19,7 @@ bool injection::loadlibrary::inject(std::string_view buffer)
 	}
 
 	// FAILED TO WRITE?
-	if (!process.write_raw_memory(buffer.data(), buffer.length(), remote_buffer.memory()))
+	if (!process.write_raw_memory(buffer.data(), remote_buffer.memory(), buffer.length()))
 	{
 		logger::log_error("Failed to write path");
 		return false;

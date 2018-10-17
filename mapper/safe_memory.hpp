@@ -9,7 +9,8 @@ class safe_memory
 {
 public:
 	safe_memory() {}
-	explicit safe_memory(native::process* process, std::uintptr_t memory) : m_process(process), m_memory(memory) {}
+	explicit safe_memory(native::process* process, std::uintptr_t memory) noexcept
+		: m_process(process), m_memory(memory) {}
 	~safe_memory()
 	{
 		// IF VALID COPY OF SAFE_MEMORY: FREE MEMORY
@@ -31,13 +32,14 @@ public:
 	safe_memory& operator= (const safe_memory& other) = delete;
 
 	// MOVE CONSTRUCTOR
-	safe_memory(safe_memory&& other) : m_process(other.m_process), m_memory(other.m_memory)
+	safe_memory(safe_memory&& other) noexcept 
+		: m_process(other.m_process), m_memory(other.m_memory)
 	{
 		other.memory() = 0x00; // NULL OLD
 	}
 
 	// MOVE ASSIGNMENT OPERATOR
-	safe_memory& operator= (safe_memory&& other) 
+	safe_memory& operator= (safe_memory&& other)  noexcept
 	{
 		this->process() = other.process();
 		this->memory() = other.memory();
@@ -45,21 +47,21 @@ public:
 		return *this;
 	}
 
-	explicit operator bool()
+	explicit operator bool() noexcept
 	{
 		return this->memory() != 0x00;
 	}
 
-	inline auto memory() -> std::uintptr_t&
+	inline auto memory() noexcept -> std::uintptr_t&
 	{
 		return this->m_memory;
 	}
-	inline auto process() -> native::process*&
+	inline auto process() noexcept -> native::process*&
 	{
 		return this->m_process;
 	}
 
-	inline void detach()
+	inline void detach() noexcept
 	{
 		this->memory() = 0x00;
 	}

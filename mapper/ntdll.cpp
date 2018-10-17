@@ -4,7 +4,7 @@ NtCreateSection_t ntdll::NtCreateSection = nullptr;
 NtMapViewOfSection_t ntdll::NtMapViewOfSection = nullptr;
 NtQuerySystemInformation_t ntdll::NtQuerySystemInformation = nullptr;
 
-void ntdll::initialise()
+void ntdll::initialise() noexcept
 {
 	const auto module_handle = GetModuleHandle(L"ntdll.dll");
 	ntdll::NtCreateSection = reinterpret_cast<NtCreateSection_t>(GetProcAddress(module_handle, "NtCreateSection"));

@@ -6,7 +6,7 @@
 #include <thread>
 #include <chrono>
 
-uintptr_t injection::manualmapper::inject(const std::vector<std::byte>& buffer, injection::executor::mode execution_mode)
+uintptr_t injection::manualmapper::inject(const std::vector<std::byte>& buffer, injection::executor::mode execution_mode) noexcept
 {
 	// GET LINKED MODULES FOR LATER USE
 	this->linked_modules() = this->process().get_modules();
@@ -15,7 +15,7 @@ uintptr_t injection::manualmapper::inject(const std::vector<std::byte>& buffer, 
 	map_ctx ctx("Main Image", buffer);
 
 	// INITIALISE EXECUTION ENGINE (EXECUTOR)
-	this->execution_engine() = { execution_mode };
+	this->execution_engine() = injection::executor(execution_mode);
 
 	// MAP MAIN IMAGE AND ALL DEPENDENCIES
 	if (!map_image(ctx))
@@ -29,7 +29,7 @@ uintptr_t injection::manualmapper::inject(const std::vector<std::byte>& buffer, 
 	return ctx.remote_image();
 }
 
-bool injection::manualmapper::map_image(map_ctx& ctx)
+bool injection::manualmapper::map_image(map_ctx& ctx) noexcept
 {
 	// CREATE A MEMORY SECTION THAT CAN BE MAPPED INTO SEPERATE PROCESSES
 	// AND REFLECT EACH OTHER, ALLOWING FOR EASY MEMORY ACCESS
@@ -67,7 +67,7 @@ bool injection::manualmapper::map_image(map_ctx& ctx)
 	return true;
 }
 
-uintptr_t injection::manualmapper::find_or_map_dependency(const std::string& image_name)
+uintptr_t injection::manualmapper::find_or_map_dependency(const std::string& image_name) noexcept
 {
 	// HAVE WE MAPPED THIS DEPENDENCY ALREADY?
 	for (auto& module : this->mapped_modules())
@@ -88,7 +88,7 @@ uintptr_t injection::manualmapper::find_or_map_dependency(const std::string& ima
 	return map_image(ctx) ? ctx.remote_image() : 0x00;
 }
 
-void injection::manualmapper::write_headers(map_ctx& ctx)
+void injection::manualmapper::write_headers(map_ctx& ctx) noexcept
 {
 	// COPY OVER PE HEADERS TO MAPPED SECTION
 	std::memcpy(
@@ -96,7 +96,7 @@ void injection::manualmapper::write_headers(map_ctx& ctx)
 		ctx.pe_buffer(),								// SOURCE
 		ctx.pe().get_optional_header().SizeOfHeaders);	// SIZE
 }
-void injection::manualmapper::write_image_sections(map_ctx& ctx)
+void injection::manualmapper::write_image_sections(map_ctx& ctx) noexcept
 {
 	// COPY OVER EACH PE SECTION TO MAPPED SECTION
 	for (const auto& section : ctx.pe().get_sections())
@@ -108,13 +108,13 @@ void injection::manualmapper::write_image_sections(map_ctx& ctx)
 	}
 }
 
-bool injection::manualmapper::call_entrypoint(map_ctx& ctx)
+bool injection::manualmapper::call_entrypoint(map_ctx& ctx) noexcept
 {
 	// EXECUTE THE IMAGE, HANDLED BY EXECUTION ENGINE
 	return this->execution_engine().handle(ctx, this->process());
 }
 
-void injection::manualmapper::relocate_image_by_delta(map_ctx& ctx)
+void injection::manualmapper::relocate_image_by_delta(map_ctx& ctx) noexcept
 {
 	// CHANGE IN BASE ADDRESS (DEFAULT -> MAPPED)
 	const auto delta = ctx.remote_image() - ctx.pe().get_image_base();
@@ -124,7 +124,7 @@ void injection::manualmapper::relocate_image_by_delta(map_ctx& ctx)
 		*cast::long_pointer(ctx.local_image() + entry.page_rva + item.get_offset()) += delta;
 }
 
-void injection::manualmapper::fix_import_table(map_ctx& ctx)
+void injection::manualmapper::fix_import_table(map_ctx& ctx) noexcept
 {
 	wstring_converter converter;
 	api_set api_schema;
@@ -172,7 +172,7 @@ void injection::manualmapper::fix_import_table(map_ctx& ctx)
 	}
 }
 
-native::process::module_export injection::manualmapper::handle_forwarded_export(native::process::module_export& exported_function, api_set& api_schema)
+native::process::module_export injection::manualmapper::handle_forwarded_export(native::process::module_export& exported_function, api_set& api_schema) noexcept
 {
 	// QUERY API SCHEMA FOR NAME
 	wstring_converter converter;
@@ -199,22 +199,22 @@ native::process::module_export injection::manualmapper::handle_forwarded_export(
 	return this->process().get_module_export(forwarded_ctx.remote_image(), exported_function.forwarded_name.c_str());
 }
 
-injection::manualmapper::module_list& injection::manualmapper::linked_modules()
+injection::manualmapper::module_list& injection::manualmapper::linked_modules() noexcept
 {
 	return this->m_linked_modules;
 }
 
-std::vector<map_ctx> injection::manualmapper::mapped_modules()
+std::vector<map_ctx> injection::manualmapper::mapped_modules() noexcept
 {
 	return this->m_mapped_modules;
 }
 
-native::process& injection::manualmapper::process()
+native::process& injection::manualmapper::process() noexcept
 {
 	return this->m_process;
 }
 
-injection::executor& injection::manualmapper::execution_engine()
+injection::executor& injection::manualmapper::execution_engine() noexcept
 {
 	return this->m_executor;
 }

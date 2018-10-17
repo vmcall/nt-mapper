@@ -3,7 +3,7 @@
 #include <vector>
 #include <algorithm>
 
-portable_executable::portable_executable(std::vector<std::byte>& new_buffer) : buffer(new_buffer)
+portable_executable::portable_executable(std::vector<std::byte>& new_buffer) noexcept : buffer(new_buffer)
 {
 	// READ HEADERS
 	if (this->buffer.data())
@@ -18,49 +18,49 @@ portable_executable::portable_executable(std::vector<std::byte>& new_buffer) : b
 	}
 }
 
-IMAGE_DOS_HEADER* portable_executable::get_dos_header()
+IMAGE_DOS_HEADER* portable_executable::get_dos_header() noexcept
 {
 	return this->dos_header;
 }
 
-IMAGE_NT_HEADERS* portable_executable::get_nt_headers()
+IMAGE_NT_HEADERS* portable_executable::get_nt_headers() noexcept
 {
 	return this->nt_headers;
 }
 
-IMAGE_FILE_HEADER portable_executable::get_file_header()
+IMAGE_FILE_HEADER portable_executable::get_file_header() noexcept
 {
 	return this->file_header;
 }
 
-IMAGE_OPTIONAL_HEADER portable_executable::get_optional_header()
+IMAGE_OPTIONAL_HEADER portable_executable::get_optional_header() noexcept
 {
 	return this->optional_header;
 }
 
-std::uintptr_t portable_executable::get_image_base()
+std::uintptr_t portable_executable::get_image_base() noexcept
 {
 	return this->optional_header.ImageBase;
 }
 
-section_list& portable_executable::get_sections()
+section_list& portable_executable::get_sections() noexcept
 {
 	return this->sections;
 }
 
-std::vector<std::byte>& portable_executable::get_buffer()
+std::vector<std::byte>& portable_executable::get_buffer() noexcept
 {
 	return this->buffer;
 }
 
-void portable_executable::parse_sections()
+void portable_executable::parse_sections() noexcept
 {
 	auto section_pointer = reinterpret_cast<IMAGE_SECTION_HEADER*>(this->nt_headers + 1);
 	for (auto index = 0; index < this->file_header.NumberOfSections; index++)
 		this->sections.push_back(section_pointer[index]);
 }
 
-relocation_list portable_executable::get_relocations(std::uintptr_t image_base)
+relocation_list portable_executable::get_relocations(std::uintptr_t image_base) noexcept
 {
 	relocation_list result;
 	auto section = this->optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];
@@ -84,7 +84,7 @@ relocation_list portable_executable::get_relocations(std::uintptr_t image_base)
 	return result;
 }
 
-import_list portable_executable::get_imports(std::uintptr_t image_base)
+import_list portable_executable::get_imports(std::uintptr_t image_base) noexcept
 {
 	import_list import_modules;
 
@@ -123,7 +123,7 @@ import_list portable_executable::get_imports(std::uintptr_t image_base)
 }
 
 // THX DAAX <3
-export_list portable_executable::get_exports(std::uintptr_t image_base)
+export_list portable_executable::get_exports(std::uintptr_t image_base) noexcept
 {
 	export_list exports;
 
