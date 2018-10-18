@@ -30,11 +30,6 @@ namespace injection
 			return executor.handle(ctx, this->process());
 		}
 
-		using module_list = std::unordered_map<std::string, std::uintptr_t>;
-		module_list& linked_modules() noexcept;
-		std::vector<map_ctx> mapped_modules() noexcept;
-		native::process& process() noexcept;
-
 	private:
 		void write_headers(map_ctx& ctx) noexcept;
 		bool map_image(map_ctx& ctx) noexcept;
@@ -43,6 +38,11 @@ namespace injection
 		void relocate_image_by_delta(map_ctx& ctx) noexcept;
 		void fix_import_table(map_ctx& ctx) noexcept;
 		native::process::module_export handle_forwarded_export(native::process::module_export& exported_function, api_set& api_schema) noexcept;
+
+		using module_list = std::unordered_map<std::string, std::uintptr_t>;
+		module_list& linked_modules() noexcept;
+		std::vector<map_ctx> mapped_modules() noexcept;
+		native::process& process() noexcept;
 
 		module_list m_linked_modules;
 		std::vector<map_ctx> m_mapped_modules;

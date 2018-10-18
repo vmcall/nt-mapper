@@ -1,7 +1,6 @@
 #include "executors.hpp"
 #include "cast.hpp"
 #include "logger.hpp"
-#include "compiler.hpp"
 #include "safe_memory.hpp"
 #include "shellcode.hpp"
 
