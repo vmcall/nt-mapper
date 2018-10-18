@@ -1,5 +1,7 @@
 #include "portable_executable.hpp"
 #include "transformer.hpp"
+#include "logger.hpp"
+
 #include <vector>
 #include <algorithm>
 
@@ -91,15 +93,23 @@ import_list portable_executable::get_imports(std::uintptr_t image_base) const no
 	import_list import_modules;
 
 	auto section = this->get_optional_header().DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+
+	if (section.VirtualAddress == 0x00 || section.Size == 0x00)
+		return import_modules;
+
 	auto import_table = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR*>(image_base + section.VirtualAddress);
 
-
-	
 	for (std::uint32_t previous_name = 0; // NAMES ARE IN MEMORY ORDER
 		previous_name < import_table->Name; 
 		previous_name = import_table->Name, ++import_table)
 	{
 		auto module_name = std::string(reinterpret_cast<char*>(image_base + (std::uintptr_t)import_table->Name));
+
+		if (module_name.empty())
+		{
+			logger::log_error("Empty module name in import table");
+		}
+
 
 		// CONVERT TO LOWER
 		transformer::string_to_lower(module_name);

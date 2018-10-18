@@ -41,11 +41,12 @@ bool injection::executors::hijack::handle(const map_ctx& ctx, native::process& p
 		const auto is_waiting = thread.state() == native::thread::state_t::WAITING;
 
 		const auto is_user_requested_delay =
-			thread.wait_reason() == native::thread::wait_reason_t::USER_REQUEST ||
-			thread.wait_reason() == native::thread::wait_reason_t::WR_USER_REQUEST;
+			thread.wait_reason() == native::thread::wait_reason_t::USER_REQUEST || thread.wait_reason() == native::thread::wait_reason_t::WR_USER_REQUEST;
 
 		if (!is_waiting || !is_user_requested_delay)
 			continue;
+
+		//const auto is_delayed = 
 
 		logger::log_formatted("Hijackable Thread", thread.thread_id(), false);
 
@@ -56,13 +57,11 @@ bool injection::executors::hijack::handle(const map_ctx& ctx, native::process& p
 			return false;
 		}
 
-		logger::log_formatted("Stack pointer", thread.context().Rsp, true);
-
 		// ALLOCATE AND WRITE A OLD INSTRUCTION POINTER ON STACK
 		thread.context().Rsp -= sizeof(std::uintptr_t);
 
-		// ALIGN STACK TO DEFAULT 8-BYTE ALIGNMENT
-		thread.context().Rsp &= 0xFFFFFFFFFFFFFFF8;
+		// ALIGN STACK TO DEFAULT 8-BYTE ALIGNMENT ?
+		// thread.context().Rsp &= 0xFFFFFFFFFFFFFFF8;
 
 		if (!process.write_memory(thread.context().Rip, thread.context().Rsp))
 		{
@@ -88,10 +87,10 @@ bool injection::executors::hijack::handle(const map_ctx& ctx, native::process& p
 		// ...
 		// AT THE END OF THE SHELLCODE, IT WRITES 0x1 TO SHELLCODE+6a TO ALERT EXECUTOR
 		// OF IT'S SUCCESS :)
-		const auto marker_address = remote_buffer.memory() + 0x6a;
+		const auto marker_address = remote_buffer.memory() + shellcode.size() - 8;
 		for (std::uint8_t marker = 0x00; marker != 0x01; process.read_memory(&marker, marker_address))
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 
 		return true;

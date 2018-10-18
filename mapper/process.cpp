@@ -201,7 +201,7 @@ native::process::module_export native::process::get_module_export(std::uintptr_t
 
 	auto export_base = nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
 	auto export_base_size = nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
-	if (!export_base) // CONTAINS EXPORTED FUNCTIONS
+	if (export_base == 0x00 || export_base_size == 0x00) // CONTAINS EXPORTED FUNCTIONS?
 	{
 		logger::log_error("Module does not contain exports!");
 		return native::process::module_export(0x00);
