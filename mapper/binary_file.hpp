@@ -5,9 +5,9 @@
 class binary_file
 {
 public:
-	explicit binary_file(std::string_view file_path) noexcept;
+	explicit binary_file(std::string_view file_path);
 
-	std::vector<std::byte>& buffer() noexcept;
+	const std::vector<std::byte>& buffer() const noexcept;
 private:
 	std::vector<std::byte> m_buffer;
 };

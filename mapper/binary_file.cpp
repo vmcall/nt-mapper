@@ -3,7 +3,7 @@
 #include <vector>
 #include <fstream>
 
-binary_file::binary_file(std::string_view file_path) noexcept
+binary_file::binary_file(std::string_view file_path)
 {
 	// CREATE FILE STREAM TO SPECIFIED PATH
 	std::ifstream stream(file_path.data(), std::ios::binary);
@@ -17,13 +17,13 @@ binary_file::binary_file(std::string_view file_path) noexcept
 	stream.seekg(0, std::ios::beg);			// GO TO BEGINNING OF STREAM
 
 	// CREATE BUFFER
-	this->buffer() = std::vector<std::byte>(length);
+	this->m_buffer = std::vector<std::byte>(length);
 
 	// COPY BUFFER FROM STREAM TO VECTOR
-	stream.read(reinterpret_cast<char*>(this->buffer().data()), length);
+	stream.read(reinterpret_cast<char*>(this->m_buffer.data()), length);
 }
 
-std::vector<std::byte>& binary_file::buffer() noexcept
+const std::vector<std::byte>& binary_file::buffer() const noexcept
 {
 	return this->m_buffer;
 }
