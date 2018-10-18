@@ -22,13 +22,10 @@ int main()
 
 	// INJECT IMAGE INTO PROCESS
 	const auto injected_ctx = mapper.inject(image.buffer());
-
 	logger::log_formatted("Injected buffer", injected_ctx.remote_image(), true);
 
 	// CALL IT USING SPECIFIED EXECUTOR
 	const auto executed = mapper.call(injected_ctx, injection::executors::hijack{});
-
-	// PRINT INJECTED IMAGE ADDRESS
 
 	std::cin.get();
 

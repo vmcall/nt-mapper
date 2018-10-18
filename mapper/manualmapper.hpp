@@ -24,7 +24,7 @@ namespace injection
 		map_ctx inject(const std::vector<std::byte>& buffer) noexcept;
 
 		template <typename Executor>
-		bool call(const map_ctx& ctx, Executor&& executor) noexcept
+		bool call(const map_ctx& ctx, const Executor&& executor) noexcept
 		{
 			// EXECUTE THE IMAGE, HANDLED BY EXECUTION ENGINE
 			return executor.handle(ctx, this->process());
