@@ -152,7 +152,6 @@
     <ClInclude Include="ntdll.hpp" />
     <ClInclude Include="portable_executable.hpp" />
     <ClInclude Include="process.hpp" />
-    <ClInclude Include="compiler.hpp" />
     <ClInclude Include="safe_handle.hpp" />
     <ClInclude Include="safe_memory.hpp" />
     <ClInclude Include="shellcode.hpp" />

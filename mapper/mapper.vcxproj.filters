@@ -75,9 +75,6 @@
     <ClInclude Include="manualmapper.hpp">
       <Filter>Header Files\Injection</Filter>
     </ClInclude>
-    <ClInclude Include="compiler.hpp">
-      <Filter>Header Files\Helpers</Filter>
-    </ClInclude>
     <ClInclude Include="safe_memory.hpp">
       <Filter>Header Files\Interop</Filter>
     </ClInclude>
