@@ -168,7 +168,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="manualmapper.cpp" />
     <ClCompile Include="map_context.cpp" />
-    <ClCompile Include="memory_section.cpp" />
     <ClCompile Include="ntdll.cpp" />
     <ClCompile Include="portable_executable.cpp" />
     <ClCompile Include="process.cpp" />

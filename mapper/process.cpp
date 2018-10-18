@@ -32,7 +32,7 @@ std::uint32_t native::process::id_from_name(std::string_view process_name) noexc
 	return 0x00;
 }
 
-MEMORY_BASIC_INFORMATION native::process::virtual_query(const std::uintptr_t address) noexcept
+MEMORY_BASIC_INFORMATION native::process::virtual_query(const std::uintptr_t address) const noexcept
 {
 	MEMORY_BASIC_INFORMATION mbi;
 
@@ -54,7 +54,7 @@ bool native::process::free_memory(const std::uintptr_t address) noexcept
 }
 
 
-bool native::process::read_raw_memory(const void* buffer, const std::uintptr_t address, const std::size_t size) noexcept
+bool native::process::read_raw_memory(const void* buffer, const std::uintptr_t address, const std::size_t size) const noexcept
 {
 	return ReadProcessMemory(
 		this->handle().unsafe_handle(),
@@ -86,19 +86,19 @@ bool native::process::virtual_protect(const std::uintptr_t address, std::uint32_
 		reinterpret_cast<PDWORD>(old_protect));
 }
 
-std::uintptr_t native::process::map(memory_section& section) noexcept
+std::uintptr_t native::process::map(const memory_section& section) noexcept
 {
 	void* base_address = nullptr;
-	SIZE_T view_size = section.size;
+	SIZE_T view_size = section.size();
 
 	auto result = ntdll::NtMapViewOfSection(
-		section.handle.unsafe_handle(),
+		section.handle().unsafe_handle(),
 		this->handle().unsafe_handle(),
 		&base_address,
 		NULL, NULL, NULL,
 		&view_size,
 		2, 0,
-		section.protection);
+		section.protection());
 
 	if (!NT_SUCCESS(result))
 	{
@@ -109,7 +109,7 @@ std::uintptr_t native::process::map(memory_section& section) noexcept
 	return reinterpret_cast<std::uintptr_t>(base_address);
 }
 
-HWND native::process::get_main_window() noexcept
+HWND native::process::get_main_window() const noexcept
 {
 	// SETUP CONTAINER
 	using window_data_t = std::pair<std::uint32_t, HWND>;
@@ -139,12 +139,12 @@ HWND native::process::get_main_window() noexcept
 	return window_data.second;
 }
 
-std::uint32_t native::process::get_id() noexcept
+std::uint32_t native::process::get_id() const noexcept
 {
 	return GetProcessId(this->handle().unsafe_handle());
 }
 
-std::unordered_map<std::string, std::uintptr_t> native::process::get_modules() noexcept
+std::unordered_map<std::string, std::uintptr_t> native::process::get_modules() const noexcept
 {
 	std::unordered_map<std::string, std::uintptr_t> result{};
 	std::array<HMODULE, 200> modules{};
@@ -184,7 +184,7 @@ std::unordered_map<std::string, std::uintptr_t> native::process::get_modules() n
 	return result;
 }
 
-std::string native::process::get_name() noexcept
+std::string native::process::get_name() const noexcept
 {
 	char buffer[MAX_PATH];
 	GetModuleBaseNameA(this->handle().unsafe_handle(), nullptr, buffer, MAX_PATH);
@@ -192,7 +192,7 @@ std::string native::process::get_name() noexcept
 	return std::string(buffer);
 }
 
-native::process::module_export native::process::get_module_export(std::uintptr_t module_handle, const char* function_ordinal) noexcept
+native::process::module_export native::process::get_module_export(std::uintptr_t module_handle, const char* function_ordinal) const noexcept
 {
 	IMAGE_DOS_HEADER dos_header;
 	IMAGE_NT_HEADERS64 nt_header;
@@ -314,7 +314,7 @@ native::thread native::process::create_thread(const std::uintptr_t address, cons
 	return native::thread(thread_handle);
 }
 
-std::vector<native::thread> native::process::threads() noexcept
+std::vector<native::thread> native::process::threads() const noexcept
 {
 	std::vector<native::thread> thread_list{};
 
@@ -342,7 +342,7 @@ std::vector<native::thread> native::process::threads() noexcept
 	return thread_list;
 }
 
-safe_handle& native::process::handle() noexcept
+const safe_handle& native::process::handle() const noexcept
 {
 	return this->m_handle;
 }

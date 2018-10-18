@@ -7,7 +7,7 @@ class safe_handle
 public:
 	safe_handle() : m_handle(nullptr) {}
 	explicit safe_handle(HANDLE new_handle) noexcept : m_handle(new_handle) {}
-	~safe_handle() 
+	~safe_handle() noexcept
 	{
 		if (this->unsafe_handle())
 		{
@@ -29,25 +29,30 @@ public:
 	// MOVE CONSTRUCTOR
 	safe_handle(safe_handle&& other) noexcept : m_handle(other.m_handle)
 	{
-		other.unsafe_handle() = nullptr; // COPY TO NEW INSTANCE AND NULL OLD
+		other.invalidate();
 	} 
 
 	// MOVE ASSIGNMENT OPERATOR
-	safe_handle& operator= (safe_handle&& other) noexcept
+	safe_handle& operator= (safe_handle&& other) noexcept 
 	{
-		this->unsafe_handle() = other.m_handle; // COPY TO NEW INSTANCE AND NULL OLD
-		other.unsafe_handle() = nullptr;
+		this->m_handle = other.m_handle; // COPY TO NEW INSTANCE AND NULL OLD
+		other.invalidate();
 		return *this;
 	}
 
-	explicit operator bool() noexcept
+	explicit operator bool() const noexcept
 	{
 		return this->unsafe_handle() != nullptr;
 	}
 
-	inline auto unsafe_handle() noexcept -> HANDLE&
+	inline auto unsafe_handle() const noexcept -> const HANDLE&
 	{
 		return this->m_handle;
+	}
+
+	inline auto invalidate() noexcept -> void
+	{
+		this->m_handle = nullptr;
 	}
 
 private:

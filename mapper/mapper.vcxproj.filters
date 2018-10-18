@@ -128,9 +128,6 @@
     <ClCompile Include="map_context.cpp">
       <Filter>Source Files\Injection</Filter>
     </ClCompile>
-    <ClCompile Include="memory_section.cpp">
-      <Filter>Source Files\Interop</Filter>
-    </ClCompile>
     <ClCompile Include="binary_file.cpp">
       <Filter>Source Files\Wrapper</Filter>
     </ClCompile>
