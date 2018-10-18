@@ -93,9 +93,6 @@
     <ClInclude Include="memory_section.hpp">
       <Filter>Header Files\Interop</Filter>
     </ClInclude>
-    <ClInclude Include="executor.hpp">
-      <Filter>Header Files\Engines</Filter>
-    </ClInclude>
     <ClInclude Include="shellcode.hpp">
       <Filter>Header Files\Engines</Filter>
     </ClInclude>
@@ -104,6 +101,9 @@
     </ClInclude>
     <ClInclude Include="thread.hpp">
       <Filter>Header Files\Interop</Filter>
+    </ClInclude>
+    <ClInclude Include="executors.hpp">
+      <Filter>Header Files\Engines</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -140,13 +140,13 @@
     <ClCompile Include="logger.cpp">
       <Filter>Source Files\Helpers</Filter>
     </ClCompile>
-    <ClCompile Include="executor.cpp">
-      <Filter>Source Files\Engines</Filter>
-    </ClCompile>
     <ClCompile Include="thread.cpp">
       <Filter>Source Files\Interop</Filter>
     </ClCompile>
     <ClCompile Include="shellcode.cpp">
+      <Filter>Source Files\Engines</Filter>
+    </ClCompile>
+    <ClCompile Include="executors.cpp">
       <Filter>Source Files\Engines</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,4 +1,4 @@
-#include "executor.hpp"
+#include "executors.hpp"
 #include "cast.hpp"
 #include "logger.hpp"
 #include "compiler.hpp"
@@ -8,27 +8,8 @@
 #include <thread>
 #include <chrono>
 
-injection::executor::mode& injection::executor::execution_mode() noexcept
-{
-	return this->m_mode;
-}
 
-bool injection::executor::handle(map_ctx& ctx, native::process& process) noexcept
-{
-	switch (this->execution_mode())
-	{
-	case injection::executor::CREATE_THREAD:
-		return this->handle_create(ctx, process);
-
-	case injection::executor::HIJACK_THREAD:
-		return this->handle_hijack(ctx, process);
-
-	default:
-		return false;
-	}
-}
-
-bool injection::executor::handle_hijack(map_ctx& ctx, native::process& process) noexcept
+bool injection::executors::hijack::handle(const map_ctx& ctx, native::process& process) const noexcept
 {
 	// CREATE SHELLCODE FOR IMAGE
 	const auto entrypoint_offset = ctx.pe().get_optional_header().AddressOfEntryPoint;
@@ -120,7 +101,7 @@ bool injection::executor::handle_hijack(map_ctx& ctx, native::process& process) 
 	return false;
 }
 
-bool injection::executor::handle_create(map_ctx& ctx, native::process& process) noexcept
+bool injection::executors::create::handle(const map_ctx& ctx, native::process& process) const noexcept
 {
 	// CREATE SHELLCODE FOR IMAGE
 	const auto entrypoint_offset = ctx.pe().get_optional_header().AddressOfEntryPoint;

@@ -6,7 +6,7 @@
 #include <thread>
 #include <chrono>
 
-uintptr_t injection::manualmapper::inject(const std::vector<std::byte>& buffer, injection::executor::mode execution_mode) noexcept
+map_ctx injection::manualmapper::inject(const std::vector<std::byte>& buffer) noexcept
 {
 	// GET LINKED MODULES FOR LATER USE
 	this->linked_modules() = this->process().get_modules();
@@ -14,19 +14,8 @@ uintptr_t injection::manualmapper::inject(const std::vector<std::byte>& buffer, 
 	// INITIALISE CONTEXT
 	map_ctx ctx("Main Image", buffer);
 
-	// INITIALISE EXECUTION ENGINE (EXECUTOR)
-	this->execution_engine() = injection::executor(execution_mode);
-
 	// MAP MAIN IMAGE AND ALL DEPENDENCIES
-	if (!map_image(ctx))
-		return 0x00;
-
-	// CALL DEPENDENCY ENTRYPOINTS AND MAIN IMAGE ENTRYPOINT
-	if (!call_entrypoint(ctx))
-		return 0x00;
-
-	// RETURN ADDRESS OF THE MAPPED IMAGE 
-	return ctx.remote_image();
+	return map_image(ctx) ? ctx : map_ctx{};
 }
 
 bool injection::manualmapper::map_image(map_ctx& ctx) noexcept
@@ -41,8 +30,9 @@ bool injection::manualmapper::map_image(map_ctx& ctx) noexcept
 	}
 
 	// MAP SECTION INTO BOTH LOCAL AND REMOTE PROCESS
-	ctx.local_image() = native::process::current_process().map(section);
-	ctx.remote_image() = this->process().map(section);
+	ctx.set_local_image(native::process::current_process().map(section));
+	ctx.set_remote_image(this->process().map(section));
+
 	if (!ctx.local_image() || !ctx.remote_image())
 	{
 		logger::log_error("Failed to map section");
@@ -106,12 +96,6 @@ void injection::manualmapper::write_image_sections(map_ctx& ctx) noexcept
 			ctx.pe_buffer() + section.PointerToRawData,								// SOURCE
 			section.SizeOfRawData);													// SIZE
 	}
-}
-
-bool injection::manualmapper::call_entrypoint(map_ctx& ctx) noexcept
-{
-	// EXECUTE THE IMAGE, HANDLED BY EXECUTION ENGINE
-	return this->execution_engine().handle(ctx, this->process());
 }
 
 void injection::manualmapper::relocate_image_by_delta(map_ctx& ctx) noexcept
@@ -212,9 +196,4 @@ std::vector<map_ctx> injection::manualmapper::mapped_modules() noexcept
 native::process& injection::manualmapper::process() noexcept
 {
 	return this->m_process;
-}
-
-injection::executor& injection::manualmapper::execution_engine() noexcept
-{
-	return this->m_executor;
 }

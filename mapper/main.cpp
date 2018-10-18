@@ -3,6 +3,7 @@
 #include "manualmapper.hpp"
 #include "logger.hpp"
 #include "binary_file.hpp"
+#include "executors.hpp"
 
 int main()
 {
@@ -20,12 +21,14 @@ int main()
 	auto mapper = injection::manualmapper(proc);
 
 	// INJECT IMAGE INTO PROCESS
-	const auto address = mapper.inject(
-		image.buffer(), 
-		injection::executor::mode::HIJACK_THREAD);
+	const auto injected_ctx = mapper.inject(image.buffer());
+
+	logger::log_formatted("Injected buffer", injected_ctx.remote_image(), true);
+
+	// CALL IT USING SPECIFIED EXECUTOR
+	const auto executed = mapper.call(injected_ctx, injection::executors::hijack{});
 
 	// PRINT INJECTED IMAGE ADDRESS
-	logger::log_formatted("Injected buffer", address, true);
 
 	std::cin.get();
 

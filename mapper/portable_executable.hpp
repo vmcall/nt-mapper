@@ -44,28 +44,29 @@ class portable_executable
 {
 public:
 	portable_executable() {};
-	explicit portable_executable(std::vector<std::byte>& new_buffer) noexcept;
+	explicit portable_executable(const std::vector<std::byte>& new_buffer) noexcept;
 
 	// INFORMATION
-	IMAGE_DOS_HEADER* get_dos_header() noexcept;
-	IMAGE_NT_HEADERS* get_nt_headers() noexcept;
-	IMAGE_FILE_HEADER get_file_header() noexcept;
-	IMAGE_OPTIONAL_HEADER get_optional_header() noexcept;
-	std::uintptr_t get_image_base() noexcept;
+	 const IMAGE_DOS_HEADER* get_dos_header() const noexcept;
+	 const IMAGE_NT_HEADERS* get_nt_headers() const noexcept;
+	 const IMAGE_FILE_HEADER get_file_header() const noexcept;
+	 const IMAGE_OPTIONAL_HEADER get_optional_header() const noexcept;
+	 const std::uintptr_t get_image_base() const noexcept;
 
 	// RESOURCES
-	std::vector<std::byte>& get_buffer() noexcept;
-	section_list& get_sections() noexcept;
-	relocation_list get_relocations(std::uintptr_t image_base) noexcept;
-	import_list get_imports(std::uintptr_t image_base) noexcept;
-	export_list get_exports(std::uintptr_t image_base) noexcept;
+	const std::vector<std::byte>& get_buffer() const noexcept;
+	const section_list& get_sections() const noexcept;
+	
+	relocation_list get_relocations(std::uintptr_t image_base)  const noexcept;
+	import_list get_imports(std::uintptr_t image_base) const noexcept;
+	export_list get_exports(std::uintptr_t image_base) const noexcept;
 
 private:
 	void parse_sections() noexcept;
-	IMAGE_DOS_HEADER* dos_header;
-	IMAGE_NT_HEADERS* nt_headers;
-	IMAGE_OPTIONAL_HEADER optional_header;
-	IMAGE_FILE_HEADER file_header;
-	std::vector<std::byte> buffer;
-	section_list sections;
+	IMAGE_DOS_HEADER* m_dos_header;
+	IMAGE_NT_HEADERS* m_nt_headers;
+	IMAGE_OPTIONAL_HEADER m_optional_header;
+	IMAGE_FILE_HEADER m_file_header;
+	std::vector<std::byte> m_buffer;
+	section_list m_sections;
 };

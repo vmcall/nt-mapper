@@ -3,67 +3,69 @@
 #include <vector>
 #include <algorithm>
 
-portable_executable::portable_executable(std::vector<std::byte>& new_buffer) noexcept : buffer(new_buffer)
+portable_executable::portable_executable(const std::vector<std::byte>& new_buffer) noexcept : m_buffer(new_buffer)
 {
 	// READ HEADERS
-	if (this->buffer.data())
+	if (this->m_buffer.data())
 	{
-		this->dos_header = reinterpret_cast<IMAGE_DOS_HEADER*>(this->buffer.data());
-		this->nt_headers = reinterpret_cast<IMAGE_NT_HEADERS64*>(this->buffer.data() + this->dos_header->e_lfanew);
-		this->file_header = this->nt_headers->FileHeader;
-		this->optional_header = this->nt_headers->OptionalHeader;
+		const auto buffer_address = this->m_buffer.data();
+
+		this->m_dos_header = reinterpret_cast<IMAGE_DOS_HEADER*>(buffer_address);
+		this->m_nt_headers = reinterpret_cast<IMAGE_NT_HEADERS64*>(buffer_address + this->get_dos_header()->e_lfanew);
+		this->m_file_header = this->get_nt_headers()->FileHeader;
+		this->m_optional_header = this->get_nt_headers()->OptionalHeader;
 
 		// PARSE IMAGE SECTIONS FOR LATER USAGE
 		parse_sections();
 	}
 }
 
-IMAGE_DOS_HEADER* portable_executable::get_dos_header() noexcept
+const IMAGE_DOS_HEADER* portable_executable::get_dos_header() const noexcept
 {
-	return this->dos_header;
+	return this->m_dos_header;
 }
 
-IMAGE_NT_HEADERS* portable_executable::get_nt_headers() noexcept
+const IMAGE_NT_HEADERS* portable_executable::get_nt_headers() const noexcept
 {
-	return this->nt_headers;
+	return this->m_nt_headers;
 }
 
-IMAGE_FILE_HEADER portable_executable::get_file_header() noexcept
+const IMAGE_FILE_HEADER portable_executable::get_file_header() const noexcept
 {
-	return this->file_header;
+	return this->m_file_header;
 }
 
-IMAGE_OPTIONAL_HEADER portable_executable::get_optional_header() noexcept
+const IMAGE_OPTIONAL_HEADER portable_executable::get_optional_header() const noexcept
 {
-	return this->optional_header;
+	return this->m_optional_header;
 }
 
-std::uintptr_t portable_executable::get_image_base() noexcept
+const std::uintptr_t portable_executable::get_image_base() const noexcept
 {
-	return this->optional_header.ImageBase;
+	return this->m_optional_header.ImageBase;
 }
 
-section_list& portable_executable::get_sections() noexcept
+const section_list& portable_executable::get_sections() const noexcept
 {
-	return this->sections;
+	return this->m_sections;
 }
 
-std::vector<std::byte>& portable_executable::get_buffer() noexcept
+const std::vector<std::byte>& portable_executable::get_buffer() const noexcept
 {
-	return this->buffer;
+	return this->m_buffer;
 }
 
 void portable_executable::parse_sections() noexcept
 {
-	auto section_pointer = reinterpret_cast<IMAGE_SECTION_HEADER*>(this->nt_headers + 1);
-	for (auto index = 0; index < this->file_header.NumberOfSections; index++)
-		this->sections.push_back(section_pointer[index]);
+	auto section_pointer = reinterpret_cast<const IMAGE_SECTION_HEADER*>(this->get_nt_headers() + 1);
+	for (auto index = 0; index < this->get_file_header().NumberOfSections; index++)
+		this->m_sections.push_back(section_pointer[index]);
 }
 
-relocation_list portable_executable::get_relocations(std::uintptr_t image_base) noexcept
+relocation_list portable_executable::get_relocations(std::uintptr_t image_base) const noexcept
 {
 	relocation_list result;
-	auto section = this->optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];
+	auto section = this->get_optional_header().DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];
 	auto base_relocation = reinterpret_cast<IMAGE_BASE_RELOCATION*>(image_base + section.VirtualAddress);
 	auto end_relocation = reinterpret_cast<std::uintptr_t>(base_relocation) + section.Size;
 	auto reloc = reinterpret_cast<reloc_data*>(base_relocation);
@@ -84,11 +86,11 @@ relocation_list portable_executable::get_relocations(std::uintptr_t image_base) 
 	return result;
 }
 
-import_list portable_executable::get_imports(std::uintptr_t image_base) noexcept
+import_list portable_executable::get_imports(std::uintptr_t image_base) const noexcept
 {
 	import_list import_modules;
 
-	auto section = this->optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+	auto section = this->get_optional_header().DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
 	auto import_table = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR*>(image_base + section.VirtualAddress);
 
 
@@ -123,11 +125,11 @@ import_list portable_executable::get_imports(std::uintptr_t image_base) noexcept
 }
 
 // THX DAAX <3
-export_list portable_executable::get_exports(std::uintptr_t image_base) noexcept
+export_list portable_executable::get_exports(std::uintptr_t image_base) const noexcept
 {
 	export_list exports;
 
-	auto section = this->optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+	auto section = this->get_optional_header().DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
 	auto export_dir = reinterpret_cast<IMAGE_EXPORT_DIRECTORY*>(image_base + section.VirtualAddress);
 
 	for (unsigned int iter = 0; iter < export_dir->NumberOfFunctions; ++iter)
