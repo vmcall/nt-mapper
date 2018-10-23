@@ -34,4 +34,8 @@ namespace transformer
 	{
 		data.erase(std::find(data.begin(), data.end(), '\0'), data.end());
 	}
+	inline void truncate(std::wstring& data) noexcept
+	{
+		data.erase(std::find(data.begin(), data.end(), '\0'), data.end());
+	}
 }

@@ -8,7 +8,7 @@
 #include <chrono>
 
 
-bool injection::executors::hijack::handle(const map_ctx& ctx, native::process& process) const noexcept
+bool injection::executors::hijack::handle_dllmain(const map_ctx& ctx, native::process& process) const noexcept
 {
 	// CREATE SHELLCODE FOR IMAGE
 	const auto entrypoint_offset = ctx.pe().get_optional_header().AddressOfEntryPoint;
@@ -45,8 +45,6 @@ bool injection::executors::hijack::handle(const map_ctx& ctx, native::process& p
 
 		if (!is_waiting || !is_user_requested_delay)
 			continue;
-
-		//const auto is_delayed = 
 
 		logger::log_formatted("Hijackable Thread", thread.thread_id(), false);
 
@@ -99,7 +97,7 @@ bool injection::executors::hijack::handle(const map_ctx& ctx, native::process& p
 	return false;
 }
 
-bool injection::executors::create::handle(const map_ctx& ctx, native::process& process) const noexcept
+bool injection::executors::create::handle_dllmain(const map_ctx& ctx, native::process& process) const noexcept
 {
 	// CREATE SHELLCODE FOR IMAGE
 	const auto entrypoint_offset = ctx.pe().get_optional_header().AddressOfEntryPoint;

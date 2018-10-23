@@ -74,10 +74,12 @@ bool native::process::write_raw_memory(const void* buffer, const std::uintptr_t 
 		nullptr);
 }
 
-bool native::process::virtual_protect(const std::uintptr_t address, std::uint32_t protect, std::uint32_t* old_protect) noexcept
+bool native::process::virtual_protect(
+	const std::uintptr_t address, 
+	const std::uint32_t protect,
+	std::uint32_t* old_protect, 
+	const std::size_t page_size) noexcept
 {
-	constexpr auto page_size = 0x1000;
-
 	return VirtualProtectEx(
 		this->handle().unsafe_handle(),
 		reinterpret_cast<LPVOID>(address),
@@ -144,32 +146,63 @@ std::uint32_t native::process::get_id() const noexcept
 	return GetProcessId(this->handle().unsafe_handle());
 }
 
-std::unordered_map<std::string, std::uintptr_t> native::process::get_modules() const noexcept
+native::process::module_list_t native::process::get_modules() const noexcept
 {
-	std::unordered_map<std::string, std::uintptr_t> result{};
-	std::array<HMODULE, 200> modules{};
+	native::process::module_list_t result{};
+	//std::array<HMODULE, 200> modules{};
+	//
+	//std::uint32_t size_needed;
+	//if (!EnumProcessModulesEx(
+	//	this->handle().unsafe_handle(),
+	//	modules.data(), 
+	//	static_cast<DWORD>(modules.size()),
+	//	reinterpret_cast<DWORD*>(&size_needed), LIST_MODULES_ALL))
+	//{
+	//	return result;
+	//}
+	//
+	//for (auto module_index = 0; module_index < size_needed / sizeof(HMODULE); module_index++)
+	//{
+	//	// INITIALISE STRING OF SIZE MAX_PATH (260)
+	//	std::string module_name(MAX_PATH, '\00');
+	//
+	//	// GET MODULE NAME
+	//	GetModuleBaseNameA(
+	//		this->handle().unsafe_handle(),
+	//		modules.at(module_index),
+	//		const_cast<char*>(module_name.c_str()),
+	//		static_cast<DWORD>(module_name.size()));
+	//
+	//	// MAKE CHARACTERS LOWERCASE
+	//	transformer::string_to_lower(module_name);
+	//
+	//	// TRUNCATE SIZE TO NULL TERMINATOR
+	//	transformer::truncate(module_name);
+	//
+	//	// SET ENTRY
+	//	result[module_name] = reinterpret_cast<std::uintptr_t>(modules.at(module_index));
+	//}
 
-	std::uint32_t size_needed;
-	if (!EnumProcessModules(
-		this->handle().unsafe_handle(),
-		modules.data(), 
-		static_cast<DWORD>(modules.size()),
-		reinterpret_cast<DWORD*>(&size_needed)))
+
+	const auto snapshot_handle = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, this->get_id());
+
+	MODULEENTRY32 module_entry{};
+	module_entry.dwSize = sizeof(MODULEENTRY32);
+
+	if (!Module32FirstW(snapshot_handle, &module_entry))
 	{
+		logger::log_error("Failed to get module");
 		return result;
 	}
 
-	for (auto module_index = 0; module_index < size_needed / sizeof(HMODULE); module_index++)
+	auto success = TRUE;
+
+	wstring_converter_t converter;
+
+	for (; success; success = Module32NextW(snapshot_handle, &module_entry))
 	{
 		// INITIALISE STRING OF SIZE MAX_PATH (260)
-		std::string module_name(MAX_PATH, '\00');
-
-		// GET MODULE NAME
-		GetModuleBaseNameA(
-			this->handle().unsafe_handle(),
-			modules.at(module_index),
-			const_cast<char*>(module_name.c_str()),
-			static_cast<DWORD>(module_name.size()));
+		std::wstring module_name(module_entry.szModule);
 
 		// MAKE CHARACTERS LOWERCASE
 		transformer::string_to_lower(module_name);
@@ -177,8 +210,11 @@ std::unordered_map<std::string, std::uintptr_t> native::process::get_modules() c
 		// TRUNCATE SIZE TO NULL TERMINATOR
 		transformer::truncate(module_name);
 
+		// CONVERT TO STRING
+		const auto narrow_string = converter.to_bytes(module_name);
+
 		// SET ENTRY
-		result[module_name] = reinterpret_cast<std::uintptr_t>(modules.at(module_index));
+		result[narrow_string] = reinterpret_cast<std::uintptr_t>(module_entry.modBaseAddr);
 	}
 
 	return result;

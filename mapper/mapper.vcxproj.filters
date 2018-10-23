@@ -102,6 +102,9 @@
     <ClInclude Include="executors.hpp">
       <Filter>Header Files\Engines</Filter>
     </ClInclude>
+    <ClInclude Include="pe_section.hpp">
+      <Filter>Header Files\Interop</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

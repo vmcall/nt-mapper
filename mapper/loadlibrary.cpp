@@ -30,7 +30,7 @@ bool injection::loadlibrary::inject(std::string_view buffer) noexcept
 	const auto function_pointer = reinterpret_cast<std::uintptr_t>(GetProcAddress(module_handle, "LoadLibraryA"));
 
 	// FAILED TO CREATE THREAD?
-	auto thread = process.create_thread(function_pointer, 0x00);
+	auto thread = process.create_thread(function_pointer, remote_buffer.memory());
 	if (!thread)
 	{
 		logger::log_error("Failed to create loadlibrary thread");

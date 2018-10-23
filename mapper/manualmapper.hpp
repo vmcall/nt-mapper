@@ -6,12 +6,7 @@
 
 #include <string>
 #include <vector>
-#include <locale>
-#include <codecvt>
 #include <unordered_map>
-
-#pragma warning(disable:4996) // DEPRECATED LIBRARY :(
-using wstring_converter = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>;
 
 namespace injection
 {
@@ -27,7 +22,7 @@ namespace injection
 		bool call(const map_ctx& ctx, const Executor&& executor) noexcept
 		{
 			// EXECUTE THE IMAGE, HANDLED BY EXECUTION ENGINE
-			return executor.handle(ctx, this->process());
+			return executor.handle_dllmain(ctx, this->process());
 		}
 
 	private:
@@ -39,12 +34,11 @@ namespace injection
 		void fix_import_table(map_ctx& ctx) noexcept;
 		native::process::module_export handle_forwarded_export(native::process::module_export& exported_function, api_set& api_schema) noexcept;
 
-		using module_list = std::unordered_map<std::string, std::uintptr_t>;
-		module_list& linked_modules() noexcept;
-		std::vector<map_ctx> mapped_modules() noexcept;
+		native::process::module_list_t& linked_modules() noexcept;
+		std::vector<map_ctx>& mapped_modules() noexcept;
 		native::process& process() noexcept;
 
-		module_list m_linked_modules;
+		native::process::module_list_t m_linked_modules;
 		std::vector<map_ctx> m_mapped_modules;
 		native::process& m_process;
 	};

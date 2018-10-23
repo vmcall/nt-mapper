@@ -8,13 +8,13 @@ namespace injection::executors
 	class hijack
 	{
 	public:
-		bool handle(const map_ctx& ctx, native::process& process) const noexcept;
+		bool handle_dllmain(const map_ctx& ctx, native::process& process) const noexcept;
 	};
 
 	class create 
 	{
 	public:
-		bool handle(const map_ctx& ctx, native::process& process) const noexcept;
+		bool handle_dllmain(const map_ctx& ctx, native::process& process) const noexcept;
 	};
 	
 }

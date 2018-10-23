@@ -150,6 +150,7 @@
     <ClInclude Include="map_context.hpp" />
     <ClInclude Include="memory_section.hpp" />
     <ClInclude Include="ntdll.hpp" />
+    <ClInclude Include="pe_section.hpp" />
     <ClInclude Include="portable_executable.hpp" />
     <ClInclude Include="process.hpp" />
     <ClInclude Include="safe_handle.hpp" />

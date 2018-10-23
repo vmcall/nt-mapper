@@ -59,9 +59,9 @@ const std::vector<std::byte>& portable_executable::get_buffer() const noexcept
 
 void portable_executable::parse_sections() noexcept
 {
-	auto section_pointer = reinterpret_cast<const IMAGE_SECTION_HEADER*>(this->get_nt_headers() + 1);
+	const auto section_pointer = reinterpret_cast<const IMAGE_SECTION_HEADER*>(this->get_nt_headers() + 1);
 	for (auto index = 0; index < this->get_file_header().NumberOfSections; index++)
-		this->m_sections.push_back(section_pointer[index]);
+		this->m_sections.push_back(pe_section(section_pointer[index]));
 }
 
 relocation_list portable_executable::get_relocations(std::uintptr_t image_base) const noexcept

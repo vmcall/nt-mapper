@@ -4,6 +4,8 @@
 #include <vector>
 #include <unordered_map>
 
+#include "pe_section.hpp"
+
 struct reloc_item
 {
 	std::uint16_t offset : 12;
@@ -36,7 +38,7 @@ struct export_data
 };
 
 using relocation_list = std::vector<std::pair<reloc_data, reloc_item>>;
-using section_list = std::vector<IMAGE_SECTION_HEADER>;
+using section_list = std::vector<pe_section>;
 using import_list = std::unordered_map<std::string, std::vector<import_data>>;
 using export_list = std::unordered_map<std::string, std::vector<export_data>>;
 
